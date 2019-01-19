@@ -5,7 +5,7 @@ vers='0.27.7'
 url="https://download.gnome.org/sources/libgit2-glib/0.27/libgit2-glib-${vers}.tar.xz"
 verify=""
 arch=`uname -m`
-build=T1
+build=T2
 src="libgit2-glib-${vers}"
 OPT_CONFIG=''
 DOCS='AUTHORS COPYING ChangeLog NEWS README meson_options.txt'
@@ -87,7 +87,7 @@ if [ $opt_package -eq 1 ] ; then
   cd $B
   cp $W/$0 .
   export LDFLAGS='-Wl,--as-needed'
-  ninja DESTDIR=$P install
+  DESTDIR=$P ninja install 
   find $P/usr/lib64 $P/lib64 -type f -name "*.la" -exec rm {} \;
 
 ################################
