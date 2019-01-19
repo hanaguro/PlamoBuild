@@ -5,7 +5,7 @@ vers='0.27.7'
 url="https://github.com/${pkgbase}/${pkgbase}/archive/v${vers}.tar.gz"
 verify=""
 arch=`uname -m`
-build=T1
+build=T2
 src="${pkgbase}-${vers}"
 OPT_CONFIG=''
 DOCS='AUTHORS CHANGELOG.md COPYING README.md git.git-authors'
@@ -80,7 +80,11 @@ if [ $opt_package -eq 1 ] ; then
   cp $W/$0 .
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
+
+  mv $P/usr/lib $P/usr/lib64
   find $P/usr/lib64 $P/lib64 -type f -name "*.la" -exec rm {} \;
+
+  sed -i 's:libdir=${prefix}/lib:libdir=${prefix}/lib64:' $P/usr/lib64/pkgconfig/libgit2.pc
 
 ################################
 #      install tweaks
