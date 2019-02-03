@@ -1,0 +1,172 @@
+#!/bin/sh
+##############################################################
+pkgbase='mozc'
+vers=`date +%Y%m%d`
+url="https://github.com/google/${pkgbase}.git
+https://github.com/e-kato/macuim.git
+http://download.fcitx-im.org/fcitx-mozc/fcitx-mozc-2.17.2313.102.1.patch
+https://fars.ee/2is4
+https://download.fcitx-im.org/fcitx-mozc/fcitx-mozc-icon.tar.gz"
+verify=""
+arch=`uname -m`
+build=T1
+src="${pkgbase}"
+OPT_CONFIG=''
+DOCS='AUTHORS LICENSE README.md'
+patchfiles='fcitx-mozc-2.17.2313.102.1.patch
+2is4'
+compress=txz
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build{,32})
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+  download_sources
+
+fi
+
+if [ $opt_config -eq 1 ] ; then
+  if [ -d $B ] ; then rm -rf $B ; fi ; cp -a $S $B
+######################################################################
+#  copy sources into build directory, patch and make in the build dir
+######################################################################
+  cd $B
+  for patch in $patchfiles ; do
+    patch -p1 < $W/$patch
+  done
+  cp -r $W/macuim/Mozc/uim $B/src/unix/
+
+  sed -i "1,/^namespace/s/^namespace/using namespace std;\nnamespace/1" $B/src/unix/fcitx/*.h
+
+  # if [ ! -f configure ] ; then
+  #   if [ -f autogen.sh ] ; then
+  #     sh ./autogen.sh
+  #     make distclean
+  #   fi
+  # fi
+  cd $B/src
+  git submodule update --init
+fi
+    
+if [ $opt_build -eq 1 ] ; then
+  cd $B/src
+
+  python build_mozc.py gyp --target_platform=Linux
+
+  if [ $? != 0 ]; then
+    echo "python build_moc.py gyp error. $0 script stop"
+    exit 255
+  fi
+
+  python build_mozc.py build -c Release unix/fcitx/fcitx.gyp:fcitx-mozc unix/uim/uim.gyp:uim-mozc server/server.gyp:mozc_server gui/gui.gyp:mozc_tool renderer/renderer.gyp:mozc_renderer
+
+  if [ $? != 0 ]; then
+    echo "python build_mozc.py build error. $0 script stop"
+    exit 255
+  fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B
+  cp $W/$0 .
+
+  mkdir -p $P/usr/lib/mozc
+  mkdir -p $P/usr/share/uim/pixmaps
+  mkdir -p $P/usr/lib64/uim/plugin
+  mkdir -p $P/usr/lib64/fcitx/
+  mkdir -p $P/usr/share/fcitx/addon/
+  mkdir -p $P/usr/share/fcitx/inputmethod/
+  mkdir -p $P/usr/share/fcitx/mozc/icon/
+
+  cp $B/src/out_linux/Release/mozc_tool $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/mozc_server $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_collocation_data_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_collocation_suppression_data_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_oss_sbm $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_suggestion_filter_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_symbol_rewriter_dictionary_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_system_dictionary_data_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/gen_usage_rewriter_dictionary_main $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/mozc_renderer $P/usr/lib/mozc/
+  cp $B/src/out_linux/Release/protoc $P/usr/lib/mozc/
+  
+  cp $B/src/out_linux/Release/libuim-mozc.so $P/usr/lib64/uim/plugin/
+  cp $B/src/out_linux/Release/fcitx-mozc.so $P/usr/lib64/fcitx/
+  cp $B/src/unix/uim/scm/*.scm $P/usr/share/uim/
+  
+  cp $B/src/data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/uim/pixmaps/mozc.png
+  cp $B/src/data/images/unix/ui-tool.png $P/usr/share/uim/pixmaps/mozc_tool_selector.png
+  cp $B/src/data/images/unix/ui-properties.png $P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png
+  cp $B/src/data/images/unix/ui-dictionary.png $P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png
+  
+  cp $B/src/unix/fcitx/fcitx-mozc.conf $P/usr/share/fcitx/addon/fcitx-mozc.conf
+  cp $B/src/unix/fcitx/mozc.conf $P/usr/share/fcitx/inputmethod/mozc.conf
+  
+  cp $W/fcitx-mozc-icons/mozc.png $P/usr/share/fcitx/mozc/icon/mozc.png
+  cp $W/fcitx-mozc-icons/mozc-alpha_full.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_full.png
+  cp $W/fcitx-mozc-icons/mozc-alpha_half.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_half.png
+  cp $W/fcitx-mozc-icons/mozc-direct.png $P/usr/share/fcitx/mozc/icon/mozc-direct.png
+  cp $W/fcitx-mozc-icons/mozc-hiragana.png $P/usr/share/fcitx/mozc/icon/mozc-hiragana.png
+  cp $W/fcitx-mozc-icons/mozc-katakana_full.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_full.png
+  cp $W/fcitx-mozc-icons/mozc-katakana_half.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_half.png
+  cp $W/fcitx-mozc-icons/mozc-dictionary.png $P/usr/share/fcitx/mozc/icon/mozc-dictionary.png
+  cp $W/fcitx-mozc-icons/mozc-properties.png $P/usr/share/fcitx/mozc/icon/mozc-properties.png
+  cp $W/fcitx-mozc-icons/mozc-tool.png $P/usr/share/fcitx/mozc/icon/mozc-tool.png
+  
+  find $P -exec strip -g {} \;
+  find $P -type f -exec chmod -x {} \;
+  chmod +x $P/usr/lib/mozc/mozc_server
+  chmod +x $P/usr/lib/mozc/mozc_tool
+  
+  mkdir -p $P/install
+  cat << EOF > $P/install/initpkg
+  
+  if [ -x /usr/bin/uim-module-manager ]; then
+    /usr/bin/uim-module-manager --register mozc
+  fi
+
+EOF
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man,
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
