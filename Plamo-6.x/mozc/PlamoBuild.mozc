@@ -9,7 +9,7 @@ https://fars.ee/2is4
 https://download.fcitx-im.org/fcitx-mozc/fcitx-mozc-icon.tar.gz"
 verify=""
 arch=`uname -m`
-build=T1
+build=T2
 src="${pkgbase}"
 OPT_CONFIG=''
 DOCS='AUTHORS LICENSE README.md'
@@ -93,53 +93,41 @@ if [ $opt_package -eq 1 ] ; then
   cd $B
   cp $W/$0 .
 
-  mkdir -p $P/usr/lib/mozc
-  mkdir -p $P/usr/share/uim/pixmaps
-  mkdir -p $P/usr/lib64/uim/plugin
-  mkdir -p $P/usr/lib64/fcitx/
-  mkdir -p $P/usr/share/fcitx/addon/
-  mkdir -p $P/usr/share/fcitx/inputmethod/
-  mkdir -p $P/usr/share/fcitx/mozc/icon/
-
-  cp $B/src/out_linux/Release/mozc_tool $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/mozc_server $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_collocation_data_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_collocation_suppression_data_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_oss_sbm $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_suggestion_filter_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_symbol_rewriter_dictionary_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_system_dictionary_data_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/gen_usage_rewriter_dictionary_main $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/mozc_renderer $P/usr/lib/mozc/
-  cp $B/src/out_linux/Release/protoc $P/usr/lib/mozc/
+  install -v -D -m755 $B/src/out_linux/Release/mozc_tool $P/usr/lib/mozc/mozc_tool
+  install -v -D -m755 $B/src/out_linux/Release/mozc_server $P/usr/lib/mozc/mozc_server
+  install -v -D -m644 $B/src/out_linux/Release/gen_collocation_data_main $P/usr/lib/mozc/gen_collocation_data_main
+  install -v -D -m644 $B/src/out_linux/Release/gen_collocation_suppression_data_main $P/usr/lib/mozc/gen_collocation_suppression_data_main
+  install -v -D -m644 $B/src/out_linux/Release/gen_oss_sbm $P/usr/lib/mozc/gen_oss_sbm
+  install -v -D -m644 $B/src/out_linux/Release/gen_suggestion_filter_main $P/usr/lib/mozc/gen_suggestion_filter_main
+  install -v -D -m644 $B/src/out_linux/Release/gen_symbol_rewriter_dictionary_main $P/usr/lib/mozc/gen_symbol_rewriter_dictionary_main
+  install -v -D -m644 $B/src/out_linux/Release/gen_system_dictionary_data_main $P/usr/lib/mozc/gen_system_dictionary_data_main
+  install -v -D -m644 $B/src/out_linux/Release/gen_usage_rewriter_dictionary_main $P/usr/lib/mozc/gen_usage_rewriter_dictionary_main
+  install -v -D -m755 $B/src/out_linux/Release/mozc_renderer $P/usr/lib/mozc/mozc_renderer
+  install -v -D -m644 $B/src/out_linux/Release/protoc $P/usr/lib/mozc/protoc
   
-  cp $B/src/out_linux/Release/libuim-mozc.so $P/usr/lib64/uim/plugin/
-  cp $B/src/out_linux/Release/fcitx-mozc.so $P/usr/lib64/fcitx/
-  cp $B/src/unix/uim/scm/*.scm $P/usr/share/uim/
+  install -v -D -m644 $B/src/out_linux/Release/libuim-mozc.so $P/usr/lib64/uim/plugin/libuim-mozc.so
+  install -v -D -m644 $B/src/out_linux/Release/fcitx-mozc.so $P/usr/lib64/fcitx/fcitx-mozc.so
   
-  cp $B/src/data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/uim/pixmaps/mozc.png
-  cp $B/src/data/images/unix/ui-tool.png $P/usr/share/uim/pixmaps/mozc_tool_selector.png
-  cp $B/src/data/images/unix/ui-properties.png $P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png
-  cp $B/src/data/images/unix/ui-dictionary.png $P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png
+  install -v -D -m644 $B/src/data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/uim/pixmaps/mozc.png
+  install -v -D -m644 $B/src/data/images/unix/ui-tool.png $P/usr/share/uim/pixmaps/mozc_tool_selector.png
+  install -v -D -m644 $B/src/data/images/unix/ui-properties.png $P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png
+  install -v -D -m644 $B/src/data/images/unix/ui-dictionary.png $P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png
   
-  cp $B/src/unix/fcitx/fcitx-mozc.conf $P/usr/share/fcitx/addon/fcitx-mozc.conf
-  cp $B/src/unix/fcitx/mozc.conf $P/usr/share/fcitx/inputmethod/mozc.conf
+  install -v -D -m644 $B/src/unix/fcitx/fcitx-mozc.conf $P/usr/share/fcitx/addon/fcitx-mozc.conf
+  install -v -D -m644 $B/src/unix/fcitx/mozc.conf $P/usr/share/fcitx/inputmethod/mozc.conf
   
-  cp $W/fcitx-mozc-icons/mozc.png $P/usr/share/fcitx/mozc/icon/mozc.png
-  cp $W/fcitx-mozc-icons/mozc-alpha_full.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_full.png
-  cp $W/fcitx-mozc-icons/mozc-alpha_half.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_half.png
-  cp $W/fcitx-mozc-icons/mozc-direct.png $P/usr/share/fcitx/mozc/icon/mozc-direct.png
-  cp $W/fcitx-mozc-icons/mozc-hiragana.png $P/usr/share/fcitx/mozc/icon/mozc-hiragana.png
-  cp $W/fcitx-mozc-icons/mozc-katakana_full.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_full.png
-  cp $W/fcitx-mozc-icons/mozc-katakana_half.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_half.png
-  cp $W/fcitx-mozc-icons/mozc-dictionary.png $P/usr/share/fcitx/mozc/icon/mozc-dictionary.png
-  cp $W/fcitx-mozc-icons/mozc-properties.png $P/usr/share/fcitx/mozc/icon/mozc-properties.png
-  cp $W/fcitx-mozc-icons/mozc-tool.png $P/usr/share/fcitx/mozc/icon/mozc-tool.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc.png $P/usr/share/fcitx/mozc/icon/mozc.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-alpha_full.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_full.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-alpha_half.png $P/usr/share/fcitx/mozc/icon/mozc-alpha_half.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-direct.png $P/usr/share/fcitx/mozc/icon/mozc-direct.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-hiragana.png $P/usr/share/fcitx/mozc/icon/mozc-hiragana.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-katakana_full.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_full.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-katakana_half.png $P/usr/share/fcitx/mozc/icon/mozc-katakana_half.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-dictionary.png $P/usr/share/fcitx/mozc/icon/mozc-dictionary.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-properties.png $P/usr/share/fcitx/mozc/icon/mozc-properties.png
+  install -v -D -m644 $W/fcitx-mozc-icons/mozc-tool.png $P/usr/share/fcitx/mozc/icon/mozc-tool.png
   
-  find $P -exec strip -g {} \;
-  find $P -type f -exec chmod -x {} \;
-  chmod +x $P/usr/lib/mozc/mozc_server
-  chmod +x $P/usr/lib/mozc/mozc_tool
+  find $P -type f -exec strip -g {} \;
   
   mkdir -p $P/install
   cat << EOF > $P/install/initpkg
