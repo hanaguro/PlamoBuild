@@ -2,7 +2,7 @@
 ##############################################################
 pkgbase='fuse_exfat'
 vers='1.2.8'
-url="input source code url here"
+url="https://github.com/relan/exfat/releases/download/v1.2.8/fuse-exfat-1.2.8.tar.gz"
 arch=`uname -m`
 build=B1
 src="fuse-exfat-${vers}"
@@ -79,6 +79,11 @@ if [ $opt_package -eq 1 ] ; then
   cd $B
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
+
+  mkdir $P/sbin
+  cd $P/sbin
+  ln -s $P/usr/sbin/mount.exfat-fuse mount.exfat 
+  cd $B
 
 ################################
 #      install tweaks
