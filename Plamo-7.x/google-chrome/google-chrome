@@ -1,0 +1,14 @@
+#!/bin/sh
+
+WORKINGDIR="/var/google-chrome"
+
+if [ -f /var/google-chrome]; then
+	exit 1
+else 
+	mkdir -p ${WORKINGDIR}
+fi
+
+cd ${WORKINGDIR}
+/usr/bin/PlamoBuild.google-chrome
+
+exit 0
