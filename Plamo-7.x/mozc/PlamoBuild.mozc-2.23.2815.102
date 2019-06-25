@@ -31,7 +31,7 @@ urls=(https://downloads.sourceforge.net/pnsft-aur/x-ken-all-${_zipcode_rel}.zip
       https://raw.githubusercontent.com/iRi-E/mozc-el-extensions/master/mozc-isearch.el)
 
 arch=`uname -m`
-build=B1
+build=B3
 src="mozc"
 OPT_CONFIG=""
 DOCS='AUTHORS LICENSE README.md'
@@ -168,11 +168,32 @@ if [ $opt_package -eq 1 ] ; then
   install -v -Dm644 $W/mozc-isearch.el $P/usr/share/emacs/site-lisp/emacs-mozc/mozc-isearch.el
   install -v -Dm644 $W/mozc-isearch.elc $P/usr/share/emacs/site-lisp/emacs-mozc/mozc-isearch.elc
 
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc.scm $P/usr/share/uim/mozc.scm
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc-key-custom.scm $P/usr/share/uim/mozc-key-custom.scm
   install -v -Dm644 data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/uim/pixmaps/mozc.png
   install -v -Dm644 data/images/unix/ui-tool.png $P/usr/share/uim/pixmaps/mozc_tool_selector.png
   install -v -Dm644 data/images/unix/ui-properties.png $P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png
   install -v -Dm644 data/images/unix/ui-dictionary.png $P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc-custom.scm $P/usr/share/uim/mozc-custom.scm
+
+  install -v -Dm644 out_linux/Release/libuim-mozc.so $P/usr/lib/uim/plugin/libuim-mozc.so
  
+  mkdir -p $P/install
+  cat <<"EOF" > $P/install/initpkg
+if [ -x /usr/bin/uim-module-manager ]; then
+	uim-module-manager --register mozc
+fi
+
+if [ -x /usr/bin/gtk-query-immodules-2.0 ]; then 
+	/usr/bin/gtk-query-immodules-2.0 --update-cache
+fi
+
+if [ -x /usr/bin/gtk-query-immodules-3.0 ]; then 
+	/usr/bin/gtk-query-immodules-3.0 --update-cache
+fi
+
+EOF
+
 ################################
 #      install tweaks
 #  strip binaries, delete locale except ja, compress man, 
