@@ -1,0 +1,77 @@
+#!/bin/sh
+##############################################################
+pkgbase=google_chrome
+#vers=`date "+%Y%m%d%H%M"`
+verbld=1
+arch=`uname -m | sed -e 's/i.86/i386/'`
+url="https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
+build=B1
+src=google-chrome-stable
+OPT_CONFIG=''
+DOCS=''
+compatlibs=''
+patchfiles=''
+installdir='opt/google/chrome'
+##############################################################
+
+# if [ ! -f ${url##*/} ]; then
+#   wget $url
+# fi
+
+if [ -f ${url##*/} ]; then
+#	touch -d "`ls -l --time-style="+%Y-%m-%d %H:%M:%S" ${url##*/} | awk '{print $6 " " $7}'`" timestamp
+	touch -r ${url##*/} timestamp
+	wget --timestamping $url
+	if [ ! timestamp -ot ${url##*/} ]; then
+		echo "Chrome is the latest version"
+		exit 0
+	fi
+else
+	wget $url
+fi
+
+vers=`ls -l --time-style="+%Y%m%d%H%M%S" ${url##*/} | awk '{print $6}'`
+
+if [ ! -d $src ]; then
+      mkdir -p ./$src
+fi
+rm -rf $src/*
+cd $src
+rpm2cpio ../${url##*/} |xz -d| cpio -ivd
+
+rm -rf etc
+
+sed -i 's|/usr/bin/google-chrome-stable|/usr/bin/google-chrome|' ./usr/share/applications/google-chrome.desktop
+
+rm -f ./usr/bin/google-chrome
+cat <<EOF > ./usr/bin/google-chrome
+if [[ -f /etc/default/google-chrome ]]; then
+	. /etc/default/google-chrome
+fi
+
+CHROMIUM_FLAGS=\${CHROMIUM_USER_FLAGS:-\$CHROMIUM_FLAGS}
+
+exec /opt/google/chrome/chrome \$CHROMIUM_FLAGS "\$@"
+EOF
+chmod 755 ./usr/bin/google-chrome
+
+mkdir -p ./etc/default
+cat <<EOF > ./etc/default/google-chrome
+# Disable Seccomp-BPF Sandbox because of crash on Plamo-5.0 (x86_64)
+# --disable-seccomp-filter-sandbox option is refer to 
+#   http://code.google.com/p/chromium/wiki/LinuxSandboxing
+#CHROMIUM_FLAGS="--disable-seccomp-filter-sandbox"
+EOF
+
+
+mkdir -p ./usr/share/doc/$src
+cp $0 ./usr/share/doc/$src
+  
+/sbin/makepkg ../$pkgbase-$vers-$arch-$build.txz <<EOF
+y
+1
+EOF
+
+/sbin/updatepkg -f ../$pkgbase-$vers-$arch-$build.txz
+
+rm -f ../$pkgbase-$vers-$arch-$build.txz
