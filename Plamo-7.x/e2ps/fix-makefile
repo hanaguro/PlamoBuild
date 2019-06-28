@@ -1,0 +1,30 @@
+Description: - Fix upstream Makefile and add hardening.
+Author: Giovani Agusuto Ferreira <giovani@riseup.net>
+Last-Update: 2015-10-15
+Index: e2ps-4.34/Makefile
+===================================================================
+--- e2ps-4.34.orig/Makefile
++++ e2ps-4.34/Makefile
+@@ -60,7 +60,7 @@ CC_LIB =
+ # strip command
+ STRIP = strip
+ 
+-CFLAGS = $(CC_ARGS) $(DEFINES) $(CC_LIB)
++CFLAGS += $(CC_ARGS) $(DEFINES) $(CC_LIB)
+ 
+ SRC = e2ps.c ps-font.c wtkf.c
+ OBJ = e2ps.o ps-font.o wtkf.o
+@@ -76,9 +76,9 @@ readme:
+ 
+ install:	e2ps
+ 	cp e2ps $(E2PS_INST_DIR)
+-	@if [ -f $(E2PS_INST_DIR)/e2lpr ]; then rm $(E2PS_INST_DIR)/e2lpr; fi
+-	ln -s $(E2PS_INST_DIR)/e2ps $(E2PS_INST_DIR)/e2lpr
++#	@if [ -f $(E2PS_INST_DIR)/e2lpr ]; then rm $(E2PS_INST_DIR)/e2lpr; fi
++#	ln -s $(E2PS_INST_DIR)/e2ps $(E2PS_INST_DIR)/e2lpr
+ 
+ e2ps:	$(OBJ)
+-	$(CC) -o $@ $(OBJ) $(CFLAGS)
+-	$(STRIP) $@
++	$(CC) -o $@ $(OBJ) $(CFLAGS) $(LDFLAGS) -lpaper
++#	$(STRIP) $@

@@ -1,0 +1,216 @@
+#!/bin/sh
+##############################################################
+pkgbase='fcitx_mozc'
+vers="2.23.2815.102"
+
+_mozc_url=https://github.com/google/mozc.git
+_japanese_usage_dictionary_url=https://github.com/hiroyuki-komatsu/japanese-usage-dictionary.git
+_gyp_url=https://chromium.googlesource.com/external/gyp
+_protobuf_url=https://github.com/google/protobuf.git
+
+_mozc_rev=afb03ddfe72dde4cf2409863a3bfea160f7a66d8
+_japanese_usage_dictionary_rev=a4a66772e33746b91e99caceecced9a28507e925
+_gyp_rev=4ec6c4e3a94bd04a6da2858163d40b2429b8aad1
+_protobuf_rev=92a7e778e7394386f413cec28d67a07630f784b1
+_zipcode_rel=201810
+_fcitx_patchver=${vers}.1
+
+git_url=($_mozc_url
+	 $_japanese_usage_dictionary_url
+	 $_gyp_url
+	 $_protobuf_url)
+commit_ids=($_mozc_rev
+	    $_japanese_usage_dictionary_rev
+	    $_gyp_rev
+	    $_protobuf_rev)
+urls=(https://downloads.sourceforge.net/pnsft-aur/x-ken-all-${_zipcode_rel}.zip
+      https://downloads.sourceforge.net/pnsft-aur/jigyosyo-${_zipcode_rel}.zip
+      https://github.com/google/mozc/pull/444/commits/82d38f929882a9c62289b179c6fe41efed249987.patch
+      https://download.fcitx-im.org/fcitx-mozc/fcitx-mozc-${_fcitx_patchver}.patch
+      https://download.fcitx-im.org/fcitx-mozc/fcitx-mozc-icon.tar.gz
+      https://raw.githubusercontent.com/iRi-E/mozc-el-extensions/master/mozc-isearch.el)
+
+arch=`uname -m`
+build=B3
+src="mozc"
+OPT_CONFIG=""
+DOCS='AUTHORS LICENSE README.md'
+patchfiles=''
+compress=txz
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build{,32})
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+B=$W/build
+
+get_sources() {
+    cnt=0
+    for u in ${git_url[@]}
+    do
+	cd $W
+	if [ ! -d $(basename ${u##*/} .git) ]; then
+	    git clone $u
+	fi
+	cd $(basename ${u##*/} .git)
+	git checkout master
+	git pull origin master
+	git checkout ${commit_ids[$cnt]}
+	let cnt++
+    done
+    for f in ${urls[@]}
+    do
+	cd $W
+	if [ ! -f ${f##*/} ]; then
+	    wget $f
+	fi
+	case ${f##*/} in
+	    *.tar*) tar xvf ${f##*/} ;;
+	    *.zip) unzip -o ${f##*/} ;;
+	esac
+    done
+
+	cd $W
+	git clone https://github.com/e-kato/macuim
+	cp -a macuim/Mozc/uim $S/src/unix/
+}
+
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+  get_sources
+fi
+
+if [ $opt_config -eq 1 ] ; then
+  if [ -d $B ] ; then rm -rf $B ; fi ; cp -a $S $B
+######################################################################
+#  don't copy sources, so need patch in the src dir
+######################################################################
+  cd $B
+  for patch in $patchfiles ; do
+    patch -p1 < $W/$patch
+  done
+  patch -Np1 -i $W/82d38f929882a9c62289b179c6fe41efed249987.patch
+
+  cd $B/src
+
+  # fcitx patch
+  rm -rf unix/fcitx
+  patch -Np2 -i $W/fcitx-mozc-${_fcitx_patchver}.patch
+  rm -rf unix/fcitx5
+
+  find . -name  \*.py        -type f -exec sed -i -e "1s|python.*$|python2|"  {} +
+  find . -regex '.*\.gypi?$' -type f -exec sed -i -e "s|'python'|'python2'|g" {} +
+
+  # Generate zip code seed
+  echo "Generating zip code seed..."
+  PYTHONPATH="$PWD:$PYTHONPATH" python2 dictionary/gen_zip_code_seed.py --zip_code="${W}/x-ken-all.csv" --jigyosyo="${W}/JIGYOSYO.CSV" >> data/dictionary_oss/dictionary09.txt
+  echo "Done."
+
+  # Copy third party deps
+  for dep in gyp protobuf
+  do
+    echo "Copy $dep to source tree for build"
+    cp -a ${W}/$dep third_party/
+  done
+  cp -v $W/japanese-usage-dictionary/* third_party/japanese_usage_dictionary/
+fi
+    
+if [ $opt_build -eq 1 ] ; then
+  cd $B/src
+  export LDFLAGS='-Wl,--as-needed'
+  _targets="server/server.gyp:mozc_server gui/gui.gyp:mozc_tool unix/fcitx/fcitx.gyp:fcitx-mozc unix/emacs/emacs.gyp:mozc_emacs_helper unix/uim/uim.gyp:uim-mozc"
+
+  QTDIR=/usr GYP_DEFINES="document_dir=/usr/share/licenses/$pkgname use_libzinnia=1" python2 build_mozc.py gyp
+  python2 build_mozc.py build -c Release $_targets
+
+  ( cd unix/emacs ; emacs -batch -f batch-byte-compile mozc.el )
+  ( cd $W ; emacs -batch -f batch-byte-compile mozc-isearch.el )
+  
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B/src
+
+  install -v -D -m 755 out_linux/Release/mozc_server $P/usr/${libdir}/mozc/mozc_server
+  install -v    -m 755 out_linux/Release/mozc_tool   $P/usr/${libdir}/mozc/mozc_tool
+
+  install -v -D -m 644 out_linux/Release/gen/unix/fcitx/po/ja.mo $P/usr/share/locale/ja/LC_MESSAGES/fcitx-mozc.mo
+
+  install -v -D -m 755 out_linux/Release/fcitx-mozc.so $P/usr/lib/fcitx/fcitx-mozc.so
+  install -v -D -m 644 unix/fcitx/fcitx-mozc.conf $P/usr/share/fcitx/addon/fcitx-mozc.conf
+  install -v -D -m 644 unix/fcitx/mozc.conf $P/usr/share/fcitx/inputmethod/mozc.conf
+
+  install -v -Dm644 $W/fcitx-mozc-icons/*.png -t $P/usr/share/fcitx/mozc/icon/
+  install -v -Dm755 out_linux/Release/mozc_emacs_helper $P/usr/bin/mozc_emacs_helper
+  install -v -Dm644 unix/emacs/mozc.el $P/usr/share/emacs/site-lisp/emacs-mozc/mozc.el
+  install -v -Dm644 unix/emacs/mozc.elc $P/usr/share/emacs/site-lisp/emacs-mozc/mozc.elc
+  install -v -Dm644 $W/mozc-isearch.el $P/usr/share/emacs/site-lisp/emacs-mozc/mozc-isearch.el
+  install -v -Dm644 $W/mozc-isearch.elc $P/usr/share/emacs/site-lisp/emacs-mozc/mozc-isearch.elc
+
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc.scm $P/usr/share/uim/mozc.scm
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc-key-custom.scm $P/usr/share/uim/mozc-key-custom.scm
+  install -v -Dm644 data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/uim/pixmaps/mozc.png
+  install -v -Dm644 data/images/unix/ui-tool.png $P/usr/share/uim/pixmaps/mozc_tool_selector.png
+  install -v -Dm644 data/images/unix/ui-properties.png $P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png
+  install -v -Dm644 data/images/unix/ui-dictionary.png $P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png
+  install -v -Dm644 $W/macuim/Mozc/scm/mozc-custom.scm $P/usr/share/uim/mozc-custom.scm
+
+  install -v -Dm644 out_linux/Release/libuim-mozc.so $P/usr/lib/uim/plugin/libuim-mozc.so
+ 
+  mkdir -p $P/install
+  cat <<"EOF" > $P/install/initpkg
+if [ -x /usr/bin/uim-module-manager ]; then
+	uim-module-manager --register mozc
+fi
+
+if [ -x /usr/bin/gtk-query-immodules-2.0 ]; then 
+	/usr/bin/gtk-query-immodules-2.0 --update-cache
+fi
+
+if [ -x /usr/bin/gtk-query-immodules-3.0 ]; then 
+	/usr/bin/gtk-query-immodules-3.0 --update-cache
+fi
+
+EOF
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
