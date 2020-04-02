@@ -7,7 +7,7 @@ arch=`uname -m`
 build=B1
 src="${pkgbase}-${vers}"
 # OPT_CONFIG="--disable-static --with-canna --with-wnn  --with-wnn-includes=/usr/include/wnn --with-sj3 --with-sqlite3 --with-x --with-expat=/usr"
-OPT_CONFIG="--with-anthy-utf8 --disable-static --with-sqlite3 --with-ffi --with-x --with-expat=/usr"
+OPT_CONFIG="--with-anthy-utf8 --disable-static --with-sqlite3 --with-ffi --with-x --with-expat=/usr --enable-default-toolkit=gtk3 --with-qt5 --with-qt5-immodule"
 DOCS="AUTHORS COPYING ChangeLog.old ChangeLog.old.2 INSTALL NEWS README"
 patchfiles=''
 compress=txz
@@ -88,6 +88,10 @@ fi
 
 if [ -x /usr/bin/gtk-query-immodules-3.0 ]; then
     /usr/bin/gtk-query-immodules-3.0 --update-cache
+fi
+
+if [ -x /usr/bin/uim-module-manager ]; then
+	uim-module-manager --register mozc
 fi
 
 EOF
