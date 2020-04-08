@@ -1,0 +1,50 @@
+diff -uprN id3lib-3.8.3/configure.in id3lib-3.8.3.new/configure.in
+--- id3lib-3.8.3/configure.in	2003-03-02 09:23:00.000000000 +0900
++++ id3lib-3.8.3.new/configure.in	2020-04-08 20:43:30.492836703 +0900
+@@ -222,12 +222,11 @@ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_CHECK_HEADERS(libcw/sys.h)
+ AC_CHECK_HEADERS(cctype climits cstdio cstdlib bitset cstring)
+-AC_CHECK_HEADERS(fstream iostream iomanip vector \
++AC_CHECK_HEADERS(fstream iostream vector \
+ 	,,AC_MSG_ERROR([Missing a vital header file for id3lib - download them here: http://gcc.gnu.org/libstdc++/ or better - compile a newer compiler like gcc3.x])
+ )
+ AC_CHECK_HEADERS(               \
+   string                        \
+-  iomanip.h                     \
+   ,,AC_MSG_ERROR([Missing a vital header file for id3lib])
+ )
+ 
+diff -uprN id3lib-3.8.3/include/id3/id3lib_strings.h id3lib-3.8.3.new/include/id3/id3lib_strings.h
+--- id3lib-3.8.3/include/id3/id3lib_strings.h	2003-03-02 09:23:00.000000000 +0900
++++ id3lib-3.8.3.new/include/id3/id3lib_strings.h	2020-04-08 20:58:11.715753115 +0900
+@@ -30,6 +30,7 @@
+ #define _ID3LIB_STRINGS_H_
+ 
+ #include <string>
++#include <cstring>
+ 
+ #if (defined(__GNUC__) && (__GNUC__ >= 3) || (defined(_MSC_VER) && _MSC_VER > 1000))
+ namespace std
+diff -uprN id3lib-3.8.3/include/id3/writers.h id3lib-3.8.3.new/include/id3/writers.h
+--- id3lib-3.8.3/include/id3/writers.h	2003-03-02 09:23:00.000000000 +0900
++++ id3lib-3.8.3.new/include/id3/writers.h	2020-04-08 21:00:18.582301352 +0900
+@@ -31,6 +31,7 @@
+ #include "id3/writer.h"
+ #include "id3/id3lib_streams.h"
+ //#include <string.h>
++#include <cstring>
+ 
+ class ID3_CPP_EXPORT ID3_OStreamWriter : public ID3_Writer
+ {
+diff -uprN id3lib-3.8.3/src/field.cpp id3lib-3.8.3.new/src/field.cpp
+--- id3lib-3.8.3/src/field.cpp	2003-03-02 09:23:00.000000000 +0900
++++ id3lib-3.8.3.new/src/field.cpp	2020-04-08 20:59:12.757349545 +0900
+@@ -32,6 +32,7 @@
+ #include "frame_def.h"
+ #include "readers.h"
+ #include <assert.h>
++#include <cstring>
+ 
+ using namespace dami;
+ 
