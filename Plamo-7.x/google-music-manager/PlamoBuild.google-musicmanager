@@ -1,0 +1,54 @@
+#!/bin/sh
+##############################################################
+pkgbase=google_musicmanager
+#vers=`date "+%Y%m%d%H%M"`
+verbld=1
+arch=`uname -m | sed -e 's/i.86/i386/'`
+url="https://dl.google.com/linux/direct/google-musicmanager-beta_current_x86_64.rpm"
+build=T1
+src=google-musicmanager-beta_current_x86_64
+OPT_CONFIG=''
+DOCS=''
+compatlibs=''
+patchfiles=''
+installdir='opt/google/musicmanager'
+##############################################################
+W=$PWD
+# if [ ! -f ${url##*/} ]; then
+#   wget $url
+# fi
+
+if [ -f ${url##*/} ]; then
+#	touch -d "`ls -l --time-style="+%Y-%m-%d %H:%M:%S" ${url##*/} | awk '{print $6 " " $7}'`" timestamp
+	touch -r ${url##*/} timestamp
+	wget --timestamping $url
+	if [ ! timestamp -ot ${url##*/} ]; then
+		echo "MusicManager is the latest version"
+		exit 0
+	fi
+else
+	wget $url
+fi
+
+vers=`ls -l --time-style="+%Y%m%d%H%M%S" ${url##*/} | awk '{print $6}'`
+
+if [ ! -d $src ]; then
+      mkdir -p ./$src
+fi
+rm -rf $src/*
+cd $src
+rpm2cpio ../${url##*/} |bzip2 -d| cpio -ivd
+
+rm -rf etc
+
+mkdir -p ./usr/share/doc/$src
+cp $W/$0 ./usr/share/doc/$src
+  
+/sbin/makepkg ../$pkgbase-$vers-$arch-$build.txz <<EOF
+y
+1
+EOF
+
+/sbin/updatepkg -f ../$pkgbase-$vers-$arch-$build.txz
+
+rm -f ../$pkgbase-$vers-$arch-$build.txz
