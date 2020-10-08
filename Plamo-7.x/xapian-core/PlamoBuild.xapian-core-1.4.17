@@ -1,15 +1,15 @@
 #!/bin/sh
 ##############################################################
-pkgbase="neomutt"
-vers="20200925"
-url="https://github.com/neomutt/neomutt/archive/20200925.tar.gz"
+pkgbase="xapian_core"
+vers="1.4.17"
+url="https://oligarchy.co.uk/xapian/1.4.17/xapian-core-1.4.17.tar.xz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B3
-src="neomutt-20200925"
-OPT_CONFIG="--ssl --sasl --gpgme --autocrypt --lua --gdbm --sqlite --disable-idn --idn2 --zlib --asan --notmuch"
-DOCS="AUTHORS.md ChangeLog.md INSTALL.md LICENSE.md README.md history mutt_history.c mutt_history.h"
+build=B1
+src="xapian-core-1.4.17"
+OPT_CONFIG="--disable-static --enable-shared"
+DOCS="AUTHORS COPYING ChangeLog ChangeLog.0 ChangeLog.examples HACKING INSTALL NEWS README"
 patchfiles=""
 # specifies files that are not in source archive and patchfiles
 addfiles=""
