@@ -1,15 +1,15 @@
 #!/bin/sh
 ##############################################################
-pkgbase="selectors2"
-vers="2.0.2"
-url="https://files.pythonhosted.org/packages/86/72/27ccb21c1ff9fa87e1ba45e38045722b4eff345ba61760224793560638f4/selectors2-2.0.2.tar.gz"
+pkgbase="python2_six"
+vers="1.15.0"
+url="https://files.pythonhosted.org/packages/6b/34/415834bfdafca3c5f451532e8a8d9ba89a21c9743a0c59fbd0205c7f9426/six-1.15.0.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B2
-src="selectors2-2.0.2"
+build=B1
+src="six-1.15.0"
 OPT_CONFIG=""
-DOCS="CHANGELOG.rst LICENSE README.rst dev-requirements.txt"
+DOCS="LICENSE README.rst"
 patchfiles=""
 # specifies files that are not in source archive and patchfiles
 addfiles=""
