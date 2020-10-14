@@ -14,8 +14,8 @@
   all: parprouted
   
   install: all
-! 	install -D parprouted ${DESTDIR}/usr/sbin/parproted
-! 	install -D parprouted.8 ${DESTDIR}/usr/man/man8/parproted.8
+! 	install -D parprouted ${DESTDIR}/usr/sbin/parprouted
+! 	install -D parprouted.8 ${DESTDIR}/usr/man/man8/parprouted.8
   
   clean:
   	rm -f $(OBJS) parprouted core
