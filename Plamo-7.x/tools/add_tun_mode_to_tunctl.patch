@@ -1,0 +1,48 @@
+Author: nwf
+Description: Allow creation of IFF_TUN devices
+
+Index: uml-utilities/tunctl/tunctl.c
+===================================================================
+--- uml-utilities.orig/tunctl/tunctl.c
++++ uml-utilities/tunctl/tunctl.c
+@@ -28,6 +28,7 @@ static void Usage(char *name)
+   fprintf(stderr, "The default tun clone device is /dev/net/tun - some systems"
+ 	  " use\n/dev/misc/net/tun instead\n\n");
+   fprintf(stderr, "-b will result in brief output (just the device name)\n");
++  fprintf(stderr, "-3 will open the interface in TUN mode, not TAP mode.\n");
+   exit(1);
+ }
+ 
+@@ -38,10 +39,10 @@ int main(int argc, char **argv)
+   struct group *gr;
+   uid_t owner = -1;
+   gid_t group = -1;
+-  int tap_fd, opt, delete = 0, brief = 0;
++  int tap_fd, opt, delete = 0, brief = 0, tun_mode = 0;
+   char *tun = "", *file = "/dev/net/tun", *name = argv[0], *end;
+ 
+-  while((opt = getopt(argc, argv, "bd:f:t:u:g:")) > 0){
++  while((opt = getopt(argc, argv, "3bd:f:t:u:g:")) > 0){
+     switch(opt) {
+       case 'b':
+         brief = 1;
+@@ -83,6 +84,9 @@ int main(int argc, char **argv)
+       case 't':
+         tun = optarg;
+         break;
++      case '3':
++        tun_mode = 1;
++        break;
+       case 'h':
+       default:
+         Usage(name);
+@@ -102,8 +106,7 @@ int main(int argc, char **argv)
+   }
+ 
+   memset(&ifr, 0, sizeof(ifr));
+-
+-  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
++  ifr.ifr_flags = (tun_mode ? IFF_TUN : IFF_TAP) | IFF_NO_PI;
+   strncpy(ifr.ifr_name, tun, sizeof(ifr.ifr_name) - 1);
+   if(ioctl(tap_fd, TUNSETIFF, (void *) &ifr) < 0){
+     perror("TUNSETIFF");

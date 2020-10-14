@@ -1,0 +1,14 @@
+Author: Sven Joachim <svenjoac@gmx.de>
+Description: Do not unnecessarily link against ncurses
+
+--- uml-utilities-20070815.orig/mconsole/Makefile
++++ uml-utilities-20070815/mconsole/Makefile
+@@ -1,7 +1,7 @@
+ BIN = uml_mconsole
+ OBJS = $(BIN).o
+ CFLAGS ?= -g -Wall
+-LIBS = ../lib/libuml.a -lreadline -lncurses
++LIBS = ../lib/libuml.a -lreadline
+ 
+ BIN_DIR ?= /usr/bin
+ 

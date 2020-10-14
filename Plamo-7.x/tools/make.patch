@@ -1,0 +1,13 @@
+*** tools-20070815/Makefile.orig	2020-10-14 19:20:43.455862913 +0900
+--- tools-20070815/Makefile	2020-10-14 19:20:58.452745902 +0900
+***************
+*** 1,4 ****
+! TUNCTL = $(shell [ -e /usr/include/linux/if_tun.h ] && echo tunctl)
+  
+  SUBDIRS = lib jail jailtest humfsify mconsole moo port-helper $(TUNCTL) \
+  	uml_net uml_switch watchdog umlfs
+--- 1,4 ----
+! TUNCTL = tunctl
+  
+  SUBDIRS = lib jail jailtest humfsify mconsole moo port-helper $(TUNCTL) \
+  	uml_net uml_switch watchdog umlfs
