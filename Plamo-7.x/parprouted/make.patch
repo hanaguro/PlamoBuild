@@ -1,0 +1,21 @@
+*** parprouted-0.65/Makefile.orig	2004-01-07 04:23:06.000000000 +0900
+--- parprouted-0.65/Makefile	2020-10-14 19:44:43.833620038 +0900
+*************** LIBS = -lpthread
+*** 11,18 ****
+  all: parprouted
+  
+  install: all
+! 	install parprouted /usr/local/sbin
+! 	install parprouted.8 /usr/local/man/man8
+  
+  clean:
+  	rm -f $(OBJS) parprouted core
+--- 11,18 ----
+  all: parprouted
+  
+  install: all
+! 	install -D parprouted ${DESTDIR}/usr/sbin/parproted
+! 	install -D parprouted.8 ${DESTDIR}/usr/man/man8/parproted.8
+  
+  clean:
+  	rm -f $(OBJS) parprouted core
