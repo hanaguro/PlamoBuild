@@ -1,0 +1,11 @@
+--- a/newfs_hfs.tproj/makehfs.c.orig	2020-10-17 04:36:30.996918201 +0900
++++ b/newfs_hfs.tproj/makehfs.c	2020-10-17 04:36:10.763035607 +0900
+@@ -37,7 +37,7 @@
+ #endif
+ #include <sys/errno.h>
+ #include <sys/stat.h>
+-#include <sys/sysctl.h>
++#include <linux/sysctl.h>
+ #if !LINUX
+ #include <sys/vmmeter.h>
+ #endif
