@@ -1,0 +1,21 @@
+From: Jochen Sprickerhof <git@jochen.sprickerhof.de>
+Date: Sun, 14 Oct 2018 00:54:47 +0200
+Subject: Add empty date in manual to make build reproducible
+
+---
+ doc/manual.tex | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/doc/manual.tex b/doc/manual.tex
+index f9e7c87..b9dabae 100644
+--- a/doc/manual.tex
++++ b/doc/manual.tex
+@@ -15,7 +15,7 @@
+ Manual\\[1cm]}
+ 
+ \author{Marius Muja, mariusm@cs.ubc.ca\\David Lowe, lowe@cs.ubc.ca}
+-
++\date{}
+ 
+ \begin{document}
+ 

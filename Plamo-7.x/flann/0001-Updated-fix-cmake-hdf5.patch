@@ -1,0 +1,49 @@
+From: Leopold Palomo-Avellaneda <leo@alaxarxa.net>
+Date: Fri, 15 Jul 2016 13:39:03 +0200
+Subject: Updated fix cmake hdf5
+
+---
+ CMakeLists.txt          | 2 +-
+ examples/CMakeLists.txt | 2 +-
+ test/CMakeLists.txt     | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c021be0..cd56ab9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -77,7 +77,7 @@ find_hdf5()
+ if (NOT HDF5_FOUND)
+ 	message(WARNING "hdf5 library not found, some tests will not be run")
+ else()
+-    include_directories(${HDF5_INCLUDE_DIR})
++    include_directories(${HDF5_INCLUDE_DIRS})
+ endif()
+ 
+ if (USE_MPI OR HDF5_IS_PARALLEL)
+diff --git a/examples/CMakeLists.txt b/examples/CMakeLists.txt
+index ae424e2..e9fef04 100644
+--- a/examples/CMakeLists.txt
++++ b/examples/CMakeLists.txt
+@@ -11,7 +11,7 @@ if (BUILD_C_BINDINGS)
+ endif()
+ 
+ if (HDF5_FOUND)
+-    include_directories(${HDF5_INCLUDE_DIR})
++    include_directories(${HDF5_INCLUDE_DIRS})
+ 
+     add_executable(flann_example_cpp flann_example.cpp)
+     target_link_libraries(flann_example_cpp ${HDF5_LIBRARIES} flann_cpp)
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index f21b58f..ae3f390 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -20,7 +20,7 @@ if (PYTHON_EXECUTABLE)
+ endif()
+ 
+ if (GTEST_FOUND AND HDF5_FOUND)
+-    include_directories(${HDF5_INCLUDE_DIR})
++    include_directories(${HDF5_INCLUDE_DIRS})
+ 
+     set(TEST_LIBRARIES "${HDF5_LIBRARIES}")
+     if (HDF5_IS_PARALLEL)
