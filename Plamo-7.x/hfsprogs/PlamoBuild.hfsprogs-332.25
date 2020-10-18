@@ -6,7 +6,7 @@ url="http://archive.ubuntu.com/ubuntu/pool/universe/h/hfsprogs/hfsprogs_332.25.o
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B2
 src="diskdev_cmds-332.25"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS=""
@@ -90,8 +90,8 @@ if [ $opt_package -eq 1 ] ; then
 
 #  export LDFLAGS='-Wl,--as-needed'
 #  make -f Makefile.lnx install DESTDIR=$P
-  install -D newfs_hfs.tproj/newfs_hfs $P/sbin/mkfs.hfs
-  install -D fsck_hfs.tproj/fsck_hfs $P/sbin/fsck.hfs
+  install -D newfs_hfs.tproj/newfs_hfs $P/sbin/mkfs.hfsplus
+  install -D fsck_hfs.tproj/fsck_hfs $P/sbin/fsck.hfsplus
 
 ################################
 #      install tweaks
