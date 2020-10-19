@@ -1,8 +1,8 @@
 #!/bin/sh
 ##############################################################
 pkgbase="youtube_dl"
-vers="2019.06.21"
-url="https://github.com/ytdl-org/youtube-dl/releases/download/2019.06.21/youtube-dl-2019.06.21.tar.gz"
+vers="2020.09.20"
+url="https://github.com/ytdl-org/youtube-dl/releases/download/2020.09.20/youtube-dl-2020.09.20.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
