@@ -6,11 +6,11 @@ url="http://0pointer.de/lennart/projects/ifmetric/ifmetric-0.3.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B2
 src="ifmetric-0.3"
 OPT_CONFIG="--disable-static --enable-shared --disable-lynx"
 DOCS="LICENSE README"
-patchfiles=""
+patchfiles="ifmetric.8_typo ifmetric.c_netlink-invalid-arg ifmetric.c_typo nlrequest.c_packet-too-small_fix"
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=txz
