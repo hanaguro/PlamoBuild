@@ -1,0 +1,21 @@
+diff -uprN lxterminal-0.3.2/src/lxterminal.c lxterminal-0.3.2.new/src/lxterminal.c
+--- lxterminal-0.3.2/src/lxterminal.c	2018-09-21 09:21:23.000000000 +0900
++++ lxterminal-0.3.2.new/src/lxterminal.c	2020-11-06 06:42:13.308612727 +0900
+@@ -1192,6 +1192,8 @@ static Term * terminal_new(LXTerminal *
+     gtk_widget_modify_style(term->close_button, rcstyle);
+     g_object_ref(rcstyle);
+ 
++    vte_terminal_set_cjk_ambiguous_width(VTE_TERMINAL(term->vte), 2);
++
+     /* Come up with default label and window title */
+     if (exec == NULL)
+     {
+@@ -1609,6 +1611,8 @@ LXTerminal * lxterminal_initialize(LXTer
+     /* Update terminal settings. */
+     terminal_settings_apply(terminal);
+ 
++    vte_terminal_set_cjk_ambiguous_width(VTE_TERMINAL(term->vte), 2);
++
+     if (arguments->tabs != NULL && arguments->tabs[0] != '\0')
+     {
+         /* use token to destructively slice tabs to different tab names */
