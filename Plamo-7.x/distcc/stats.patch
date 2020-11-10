@@ -1,0 +1,63 @@
+diff -uprN distcc-3.3.3/src/prefork.c distcc-3.3.3.new/src/prefork.c
+--- distcc-3.3.3/src/prefork.c	2019-08-15 04:08:47.000000000 +0900
++++ distcc-3.3.3.new/src/prefork.c	2020-11-10 19:41:44.790833104 +0900
+@@ -57,6 +57,10 @@
+ #include "netutil.h"
+ #include "stats.h"
+ 
++const char *stats_text[20] = { "TCP_ACCEPT", "REJ_BAD_REQ", "REJ_OVERLOAD",
++    "COMPILE_OK", "COMPILE_ERROR", "COMPILE_TIMEOUT", "CLI_DISCONN",
++    "OTHER" };
++
+ void dcc_manage_kids(int listen_fd);
+ static void dcc_sigchld_handler(int sig);
+ static void dcc_create_kids(int listen_fd);
+diff -uprN distcc-3.3.3/src/serve.c distcc-3.3.3.new/src/serve.c
+--- distcc-3.3.3/src/serve.c	2019-08-15 04:08:47.000000000 +0900
++++ distcc-3.3.3.new/src/serve.c	2020-11-10 19:41:32.823934678 +0900
+@@ -89,6 +89,8 @@
+ #ifdef HAVE_GSSAPI
+ #include "auth.h"
+ 
++
++
+ /* Global security context in case confidentiality/integrity */
+ /* type services are needed in the future. */
+ extern gss_ctx_id_t distccd_ctx_handle;
+@@ -666,6 +668,10 @@ static int dcc_run_job(int in_fd,
+     char *client_cwd = NULL;
+     int changed_directory = 0;
+ 
++    const char *stats_text[20] = { "TCP_ACCEPT", "REJ_BAD_REQ", "REJ_OVERLOAD",
++    "COMPILE_OK", "COMPILE_ERROR", "COMPILE_TIMEOUT", "CLI_DISCONN",
++    "OTHER" };
++
+     gettimeofday(&start, NULL);
+ 
+     if ((ret = dcc_make_tmpnam("distcc", ".deps", &deps_fname)))
+diff -uprN distcc-3.3.3/src/stats.c distcc-3.3.3.new/src/stats.c
+--- distcc-3.3.3/src/stats.c	2019-08-15 04:08:47.000000000 +0900
++++ distcc-3.3.3.new/src/stats.c	2020-11-10 19:06:43.631796412 +0900
+@@ -82,10 +82,6 @@ struct statsdata {
+     char compiler[MAX_FILENAME_LEN];
+ };
+ 
+-const char *stats_text[20] = { "TCP_ACCEPT", "REJ_BAD_REQ", "REJ_OVERLOAD",
+-    "COMPILE_OK", "COMPILE_ERROR", "COMPILE_TIMEOUT", "CLI_DISCONN",
+-    "OTHER" };
+-
+ /* Call this to initialize stats */
+ int dcc_stats_init() {
+     if (arg_stats) {
+diff -uprN distcc-3.3.3/src/stats.h distcc-3.3.3.new/src/stats.h
+--- distcc-3.3.3/src/stats.h	2019-08-15 04:08:47.000000000 +0900
++++ distcc-3.3.3.new/src/stats.h	2020-11-10 19:44:48.337712966 +0900
+@@ -33,8 +33,6 @@ enum stats_e { STATS_TCP_ACCEPT, STATS_R
+                 STATS_COMPILE_OK, STATS_COMPILE_ERROR, STATS_COMPILE_TIMEOUT,
+                 STATS_CLI_DISCONN, STATS_OTHER, STATS_ENUM_MAX };
+ 
+-const char *stats_text[20];
+-
+ int  dcc_stats_init(void);
+ void dcc_stats_init_kid(void);
+ int  dcc_stats_server(int listen_fd);
