@@ -1,0 +1,108 @@
+diff -uprN hidrd-0.2.0/include/hidrd/fmt/code/snk.h hidrd-0.2.0.new/include/hidrd/fmt/code/snk.h
+--- hidrd-0.2.0/include/hidrd/fmt/code/snk.h	2010-05-28 01:40:42.000000000 +0900
++++ hidrd-0.2.0.new/include/hidrd/fmt/code/snk.h	2020-11-16 09:38:54.075877255 +0900
+@@ -34,13 +34,13 @@ extern "C" {
+ #endif
+ 
+ /** Source code sink type */
+-const hidrd_snk_type    hidrd_code_snk;
++//const hidrd_snk_type    hidrd_code_snk;
+ 
+ /** Source code sink instance */
+-typedef struct hidrd_code_snk_inst {
+-    hidrd_spec_snk_inst     spec_snk;   /**< Parent structure */
+-    bool                    comments;   /**< "Comments enabled" flag */
+-} hidrd_code_snk_inst;
++// typedef struct hidrd_code_snk_inst {
++//     hidrd_spec_snk_inst     spec_snk;   /**< Parent structure */
++//     bool                    comments;   /**< "Comments enabled" flag */
++// } hidrd_code_snk_inst;
+ 
+ #ifdef __cplusplus
+ } /* extern "C" */
+diff -uprN hidrd-0.2.0/include/hidrd/fmt/natv/snk.h hidrd-0.2.0.new/include/hidrd/fmt/natv/snk.h
+--- hidrd-0.2.0/include/hidrd/fmt/natv/snk.h	2010-05-28 01:40:42.000000000 +0900
++++ hidrd-0.2.0.new/include/hidrd/fmt/natv/snk.h	2020-11-16 13:37:01.803441155 +0900
+@@ -34,7 +34,7 @@ extern "C" {
+ #endif
+ 
+ /** Native sink type */
+-const hidrd_snk_type    hidrd_natv_snk;
++//const hidrd_snk_type    hidrd_natv_snk;
+ 
+ /** Native sink error code */
+ typedef enum hidrd_natv_snk_err {
+diff -uprN hidrd-0.2.0/include/hidrd/fmt/spec/snk.h hidrd-0.2.0.new/include/hidrd/fmt/spec/snk.h
+--- hidrd-0.2.0/include/hidrd/fmt/spec/snk.h	2010-05-28 01:40:43.000000000 +0900
++++ hidrd-0.2.0.new/include/hidrd/fmt/spec/snk.h	2020-11-16 13:31:30.967237422 +0900
+@@ -38,7 +38,7 @@ extern "C" {
+  * Declarations of the specification example sink type methods and constants
+  */
+ extern bool hidrd_spec_snk_init(hidrd_snk *snk, char **perr,
+-                                size_t tabstop, bool dumps, bool comments);
++                               size_t tabstop, bool dumps, bool comments);
+ extern bool hidrd_spec_snk_initv(hidrd_snk *snk, char **perr, va_list ap);
+ extern const hidrd_opt_spec hidrd_spec_snk_opts_spec[];
+ extern bool hidrd_spec_snk_init_opts(hidrd_snk         *snk,
+@@ -51,7 +51,7 @@ extern bool hidrd_spec_snk_flush(hidrd_s
+ extern void hidrd_spec_snk_clnp(hidrd_snk *snk);
+ 
+ /** Specification example sink type */
+-const hidrd_snk_type    hidrd_spec_snk;
++//const hidrd_snk_type    hidrd_spec_snk;
+ 
+ /** Specification example sink item state table */
+ typedef struct hidrd_spec_snk_state hidrd_spec_snk_state;
+diff -uprN hidrd-0.2.0/lib/fmt/code/snk.c hidrd-0.2.0.new/lib/fmt/code/snk.c
+--- hidrd-0.2.0/lib/fmt/code/snk.c	2010-05-28 01:41:00.000000000 +0900
++++ hidrd-0.2.0.new/lib/fmt/code/snk.c	2020-11-16 13:33:54.563261189 +0900
+@@ -28,6 +28,13 @@
+ #include "hidrd/util/buf.h"
+ #include "hidrd/fmt/code/snk.h"
+ 
++extern const hidrd_snk_type    hidrd_spec_snk;
++
++typedef struct hidrd_code_snk_inst {
++    hidrd_spec_snk_inst     spec_snk;   /**< Parent structure */
++    bool                    comments;   /**< "Comments enabled" flag */
++} hidrd_code_snk_inst;
++
+ static bool
+ hidrd_code_snk_init(hidrd_snk *snk, char **perr,
+                     size_t tabstop, bool comments, bool comments_comments)
+diff -uprN hidrd-0.2.0/lib/fmt/code.c hidrd-0.2.0.new/lib/fmt/code.c
+--- hidrd-0.2.0/lib/fmt/code.c	2010-05-28 01:41:00.000000000 +0900
++++ hidrd-0.2.0.new/lib/fmt/code.c	2020-11-16 09:33:55.826299319 +0900
+@@ -26,6 +26,8 @@
+ 
+ #include "hidrd/fmt/code.h"
+ 
++extern const hidrd_snk_type    hidrd_code_snk;
++
+ const hidrd_fmt hidrd_code  = {
+     .name   = "code",
+     .desc   = "source code",
+diff -uprN hidrd-0.2.0/lib/fmt/natv.c hidrd-0.2.0.new/lib/fmt/natv.c
+--- hidrd-0.2.0/lib/fmt/natv.c	2010-05-28 01:41:00.000000000 +0900
++++ hidrd-0.2.0.new/lib/fmt/natv.c	2020-11-16 13:38:07.301338150 +0900
+@@ -26,6 +26,8 @@
+ 
+ #include "hidrd/fmt/natv.h"
+ 
++extern const hidrd_snk_type    hidrd_natv_snk;
++
+ const hidrd_fmt hidrd_natv  = {
+     .name   = "natv",
+     .desc   = "native",
+diff -uprN hidrd-0.2.0/lib/fmt/spec.c hidrd-0.2.0.new/lib/fmt/spec.c
+--- hidrd-0.2.0/lib/fmt/spec.c	2010-05-28 01:41:00.000000000 +0900
++++ hidrd-0.2.0.new/lib/fmt/spec.c	2020-11-16 13:34:12.443596439 +0900
+@@ -26,6 +26,8 @@
+ 
+ #include "hidrd/fmt/spec.h"
+ 
++extern const hidrd_snk_type    hidrd_spec_snk;
++
+ const hidrd_fmt hidrd_spec  = {
+     .name   = "spec",
+     .desc   = "specification example",
