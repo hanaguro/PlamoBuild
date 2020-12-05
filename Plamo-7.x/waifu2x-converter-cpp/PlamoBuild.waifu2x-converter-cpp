@@ -1,16 +1,16 @@
 #!/bin/sh
 ##############################################################
 pkgbase="waifu2x_converter_cpp"
-vers="5.3.3"
-url="input source code url here"
+vers=$(date +%Y%m%d)
+url="https://github.com/DeadSix27/waifu2x-converter-cpp.git"
 verify=""
 digest=""
 arch=`uname -m`
 build=B1
-src="waifu2x-converter-cpp-5.3.3"
+src="waifu2x-converter-cpp"
 OPT_CONFIG="-DCMAKE_BUILD_TYPE=Release"
 DOCS="LICENSE OpenCV_LICENSE README.md"
-patchfiles="waifu2x-converter-cpp-gcc10.patch"
+patchfiles=""
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=txz
