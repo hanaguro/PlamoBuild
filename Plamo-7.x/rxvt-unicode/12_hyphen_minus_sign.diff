@@ -1,0 +1,22 @@
+Description: Don't use hyphens as minus signs
+ Tell pod not to change - into a hyphen by wrapping it in C<>; see
+ perlpodspec for details.
+Forwarded: no
+Author: Ryan Kavanagh <rak@debian.org>
+Origin: vendor
+Reviewed-By: Ryan Kavanagh <rak@debian.org>
+Last-Updated: 2020-07-29
+
+Index: rxvt-unicode/doc/rxvt.7.pod
+===================================================================
+--- rxvt-unicode.orig/doc/rxvt.7.pod	2020-07-29 10:47:53.202987337 -0400
++++ rxvt-unicode/doc/rxvt.7.pod	2020-07-29 10:47:53.198987693 -0400
+@@ -2019,7 +2019,7 @@
+ 
+ =begin table
+ 
+-	B<< C<h> >>	Bold/italic implies high intensity (see option B<-is>)
++	B<< C<h> >>	Bold/italic implies high intensity (see option B<C<-is>>)
+ 	B<< C<l> >>	Font styles have no effect on intensity (Compile styles)
+ 
+ =end table
