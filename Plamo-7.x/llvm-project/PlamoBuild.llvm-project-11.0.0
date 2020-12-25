@@ -1,0 +1,145 @@
+#!/bin/sh
+##############################################################
+pkgbase='llvm'
+vers=$(date +%Y%m%d)
+url="https://github.com/llvm/llvm-project.git"
+arch="11.0.0"
+build=B1
+src="llvm-project/llvm"
+OPT_CONFIG="
+    -DCMAKE_BUILD_TYPE=Release 
+    -DLLVM_ENABLE_PROJECTS='clang;clang-tools-extra;compiler-rt;libcxx;libcxxabi;lld;lldb;openmp;parallel-libs;polly;pstl'
+    -DCMAKE_INSTALL_PREFIX=/usr
+    -DLLVM_BUILD_LLVM_DYLIB=ON 
+    -DLLVM_LINK_LLVM_DYLIB=ON 
+    -DLLVM_INSTALL_UTILS=ON 
+    -DLLVM_ENABLE_RTTI=ON 
+    -DLLVM_ENABLE_FFI=ON 
+    -DLLVM_BUILD_TESTS=Off
+    -DFFI_INCLUDE_DIR=$(pkg-config --variable=includedir libffi) \
+    -DLLVM_BINUTILS_INCDIR=/usr/include
+    -DLLDB_ENABLE_LIBEDIT=On
+    -DLLDB_ENABLE_CURSES=On
+    -DLLDB_ENABLE_LZMA=On
+    -DLLDB_ENABLE_LIBXML2=On
+    -DLLDB_ENABLE_PYTHON=On
+    -DLLDB_ENABLE_LUA=On
+    -Wnodev
+    "
+DOCS='CODE_OWNERS.TXT CREDITS.TXT LICENSE.TXT LLVMBuild.txt README.txt RELEASE_TESTERS.TXT'
+patchfiles=''
+oldlib='libLLVM-10.0.1.so libLLVM-9.0.0.so'
+compress=txz
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+# このスクリプトで使う1文字変数の意味
+# 
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build{,32})
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+    download_sources
+
+    cd llvm-project
+    git checkout -b llvmorg-${vers} refs/tags/llvmorg-${vers}
+fi
+
+B=`pwd`/build
+if [ $opt_config -eq 1 ] ; then
+    if [ -d $B ] ; then rm -rf $B ; fi ; mkdir -p $B 
+######################################################################
+#  don't copy sources, so need patch in the src dir
+######################################################################
+    
+    for patch in $patchfiles ; do
+        if [ ! -f .${patch} ]; then
+            patch -p1 < $W/$patch
+            touch .${patch}
+        fi
+    done
+
+    cd $B
+    export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
+    export LDFLAGS='-Wl,--as-needed' 
+    cmake -G Ninja ${OPT_CONFIG} $S
+    if [ $? != 0 ]; then
+	echo "configure error. $0 script stop"
+	exit 255
+    fi
+fi
+    
+if [ $opt_build -eq 1 ] ; then
+    cd $B
+    export LDFLAGS='-Wl,--as-needed'
+    ninja -j16
+    if [ $? != 0 ]; then
+	echo "build error. $0 script stop"
+	exit 255
+    fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B
+  DESTDIR=$P ninja install
+  for i in $oldlib ; do
+      cp -a $W/$i $P/usr/lib
+      ( cd $P/usr/lib ; ln -sf $i ${i%[01].[01].so}so )
+  done
+
+  mv $P/usr/include/llvm/Config/llvm-config{,-64}.h 
+  cat <<"EOF" > $P/usr/include/llvm/Config/llvm-config.h
+#include <bits/wordsize.h>
+
+#if __WORDSIZE == 32
+#include "llvm-config-32.h"
+#elif __WORDSIZE == 64
+#include "llvm-config-64.h"
+#else
+#error "Unknown word size"
+#endif
+
+EOF
+
+  pushd $S/utils/lit
+  python setup.py install --root=$P -O1
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
