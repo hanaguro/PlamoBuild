@@ -1,0 +1,146 @@
+#!/bin/sh
+##############################################################
+pkgbase='lib32_llvm'
+vers=11.0.1
+url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${vers}/llvm-${vers}.src.tar.xz"
+arch="i686"
+build=B3
+src="llvm-${vers}.src"
+OPT_CONFIG="
+    -DCMAKE_BUILD_TYPE=Release 
+    -DLLVM_ENABLE_RTTI=ON
+    -DCMAKE_INSTALL_PREFIX=/usr
+    -DLLVM_ENABLE_FFI=ON 
+    -DLLVM_BUILD_LLVM_DYLIB=ON 
+    -DLLVM_LINK_LLVM_DYLIB=ON 
+    -DLLVM_TARGETS_TO_BUILD='X86;AMDGPU;BPF' 
+    -DLLVM_LIBDIR_SUFFIX=32 
+    -DCMAKE_C_FLAGS:STRING=-m32 
+    -DCMAKE_CXX_FLAGS:STRING=-m32  
+    -DLLVM_TARGET_ARCH:STRING=i686  
+    -DLLVM_DEFAULT_TARGET_TRIPLE='i686-pc-linux-gnu' 
+    -Wno-dev
+    "
+#    -DLLVM_ENABLE_PROJECTS='clang;compiler-rt'
+DOCS='CODE_OWNERS.TXT CREDITS.TXT LICENSE.TXT LLVMBuild.txt README.txt RELEASE_TESTERS.TXT'
+# url2="https://github.com/llvm/llvm-project/releases/download/llvmorg-${vers}/clang-${vers}.src.tar.xz"
+# url3="https://github.com/llvm/llvm-project/releases/download/llvmorg-${vers}/compiler-rt-${vers}.src.tar.xz"
+patchfiles=''
+compress=txz
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+export CC='gcc -m32'
+export CXX='g++ -m32'
+libdir='lib32'
+
+# このスクリプトで使う1文字変数の意味
+# 
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build{,32})
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+    download_sources
+
+    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${vers}/clang-${vers}.src.tar.xz
+    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-${vers}/compiler-rt-${vers}.src.tar.xz
+
+    tar xvf clang-${vers}.src.tar.xz
+    tar xvf compiler-rt-${vers}.src.tar.xz
+
+    mv clang-${vers}.src $S/tools/clang
+    mv compiler-rt-${vers}.src $S/projects/compiler-rt
+fi
+
+B=`pwd`/build
+if [ $opt_config -eq 1 ] ; then
+    if [ -d $B ] ; then rm -rf $B ; fi ; mkdir -p $B 
+######################################################################
+#  don't copy sources, so need patch in the src dir
+######################################################################
+    
+    for patch in $patchfiles ; do
+        if [ ! -f .${patch} ]; then
+            patch -p1 < $W/$patch
+            touch .${patch}
+        fi
+    done
+
+    cd $B
+    export LD_LIBRARY_PATH=/lib32:/usr/lib32
+    export LDFLAGS='-Wl,--as-needed' 
+    cmake -G Ninja ${OPT_CONFIG} $S
+
+    find $B -type f -exec sed -i 's/lib32\/libxml2/lib\/libxml2/g' {} \;
+
+    if [ $? != 0 ]; then
+	echo "configure error. $0 script stop"
+	exit 255
+    fi
+
+    find . -type f -exec sed -i "s/\/usr\/lib\/libxml2.so/\/usr\/lib32\/libxml2.so/" {} \;
+fi
+    
+if [ $opt_build -eq 1 ] ; then
+    cd $B
+    export LDFLAGS='-Wl,--as-needed'
+    ninja -j16
+    if [ $? != 0 ]; then
+	echo "build error. $0 script stop"
+	exit 255
+    fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B
+  DESTDIR=$P ninja install
+
+  mv $P/usr/bin/llvm-config $P/usr/bin/llvm-config-32
+  mv $P/usr/include/llvm/Config/llvm-config.h $P/usr/include/llvm/Config/llvm-config-32.h
+
+  find "$P/usr/include" -type f -not -name '*-32.h' -delete
+  find "$P/usr/bin" -type f -not -name '*-32' -delete
+  find "$P/usr/bin" -type l -not -name '*-32' -delete
+
+  rm -rf $P/usr/share/{clang,man,scan-build,scan-view,opt-viewer}
+  rm -rf $P/usr/libexec
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
