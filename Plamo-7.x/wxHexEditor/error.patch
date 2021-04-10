@@ -1,0 +1,29 @@
+diff -uprN wxHexEditor-0.24.orig/src/HexDialogs.cpp wxHexEditor-0.24/src/HexDialogs.cpp
+--- wxHexEditor-0.24.orig/src/HexDialogs.cpp	2021-04-10 17:43:28.908180386 +0900
++++ wxHexEditor-0.24/src/HexDialogs.cpp	2021-04-10 17:45:59.501959907 +0900
+@@ -420,7 +420,7 @@ void FindDialog::OnChar( wxKeyEvent& eve
+ 	}
+ 
+ void FindDialog::EventHandler( wxCommandEvent& event ){
+-	WX_CLEAR_ARRAY(parent->HighlightArray )
++	WX_CLEAR_ARRAY(parent->HighlightArray );
+ 	parent->HighlightArray.Shrink();
+ 
+ 	if( event.GetId() == btnFind->GetId())
+バイナリーファイル wxHexEditor-0.24.orig/src/HexEditorCtrl/.HexEditorCtrl.cpp.swp とwxHexEditor-0.24/src/HexEditorCtrl/.HexEditorCtrl.cpp.swp は異なります
+diff -uprN wxHexEditor-0.24.orig/src/HexEditorCtrl/HexEditorCtrl.cpp wxHexEditor-0.24/src/HexEditorCtrl/HexEditorCtrl.cpp
+--- wxHexEditor-0.24.orig/src/HexEditorCtrl/HexEditorCtrl.cpp	2017-12-31 11:15:18.000000000 +0900
++++ wxHexEditor-0.24/src/HexEditorCtrl/HexEditorCtrl.cpp	2021-04-10 17:47:52.356425206 +0900
+@@ -64,9 +64,9 @@ HexEditorCtrl::~HexEditorCtrl( void ){
+ 	Dynamic_Disconnector();
+ 	Clear();
+ 
+-	WX_CLEAR_ARRAY(MainTagArray)
+-	WX_CLEAR_ARRAY(HighlightArray)
+-   WX_CLEAR_ARRAY(CompareArray)
++	WX_CLEAR_ARRAY(MainTagArray);
++	WX_CLEAR_ARRAY(HighlightArray);
++   WX_CLEAR_ARRAY(CompareArray);
+ 
+    MainTagArray.Shrink();
+    HighlightArray.Shrink();
