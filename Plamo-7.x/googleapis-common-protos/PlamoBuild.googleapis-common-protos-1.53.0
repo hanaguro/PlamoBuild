@@ -1,13 +1,13 @@
 #!/bin/sh
 ##############################################################
 pkgbase="googleapis_common_protos"
-vers="1.52.0"
-url="input source code url here"
+vers="1.53.0"
+url="https://files.pythonhosted.org/packages/1f/4a/369a8b1cf12089c1a902101b0431729e02cd2dd4e390377c920aa1d3ccab/googleapis-common-protos-1.53.0.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
-src="googleapis-common-protos-1.52.0"
+build=B2
+src="googleapis-common-protos-1.53.0"
 OPT_CONFIG=""
 DOCS="README.md"
 patchfiles=""
