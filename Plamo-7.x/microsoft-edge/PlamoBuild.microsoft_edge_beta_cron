@@ -1,1 +1,90 @@
-/home/takahiro/bin/PlamoBuild.microsoft_edge_beta_cron
+#!/bin/sh
+export NO_STRIP=1
+##############################################################
+pkgbase='microsoft_edge'
+#vers="91.0.864.33"
+#rel="1"
+channel="beta"
+#if [ -x /usr/bin/rpm ]; then
+#    vers=$(rpm -qpi microsoft-edge-dev-88.0.673.0-1.x86_64.rpm 2>/dev/null | egrep '^Version' | awk '{ print $3 }')
+#else
+#    vers=$release
+#fi
+#src="microsoft-edge-${vers}"
+#url="https://packages.microsoft.com/yumrepos/edge/microsoft-edge-${channel}-${vers}-${rel}.x86_64.rpm"
+verify=""
+arch=`uname -m`
+build=B1
+OPT_CONFIG=""
+DOCS=''
+patchfiles=''
+compress=txz
+workdir=$HOME/edge
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+if [ ! -d $workdir ]; then
+	mkdir $workdir
+fi
+
+cd $workdir
+
+rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
+
+if [ -f $rpmname ]; then
+	# 新しいRPMを取得
+	wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+	rpmname_old=$rpmname
+	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
+	if [ $rpmname = $rpmname_old ]; then
+		echo "Edge is the latest version"
+		exit 0
+	fi
+else
+	wget -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+fi
+
+rpm2tar $rpmname
+if [ $? != 0 ]; then
+	echo "failed to convert rpm to tar."
+	exit 255
+fi
+
+vers=`ls -l --time-style="+%Y%m%d%H%M%S" $rpmname | awk '{print $6}'`
+
+if [ -d $P ]; then
+	rm -rf $P
+fi
+mkdir -p $P
+tar xf $(basename $rpmname .rpm).tar -C $P
+
+rm -rf $P/etc
+rm -rf $P/usr/share/gnome-control-center
+
+cp $0 .
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+convert_links
+
+pkg=${pkgbase}_${channel}-${vers}-${arch}-${build}
+
+cd $P
+/sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+/sbin/updatepkg -f ../$pkg.$compress
+
+rm -f ../$pkg.$compress
