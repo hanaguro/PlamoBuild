@@ -88,3 +88,5 @@ EOF
 /sbin/updatepkg -f ../$pkg.$compress
 
 rm -f ../$pkg.$compress
+rm -rf ../*.tar
+rm -rf ../work
