@@ -1,0 +1,13 @@
+Index: hdf5/java/src/hdf/hdf5lib/exceptions/HDF5Exception.java
+===================================================================
+--- hdf5.orig/java/src/hdf/hdf5lib/exceptions/HDF5Exception.java
++++ hdf5/java/src/hdf/hdf5lib/exceptions/HDF5Exception.java
+@@ -32,7 +32,7 @@ package hdf.hdf5lib.exceptions;
+  * error code returned by the HDF5 library.
+  *
+  */
+-public class HDF5Exception extends Exception {
++public class HDF5Exception extends RuntimeException {
+     protected String detailMessage;
+ 
+     /**

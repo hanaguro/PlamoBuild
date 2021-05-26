@@ -10,7 +10,7 @@ Index: hdf5/src/H5.c
 ===================================================================
 --- hdf5.orig/src/H5.c
 +++ hdf5/src/H5.c
-@@ -751,8 +751,7 @@ H5check_version(unsigned majnum, unsigne
+@@ -778,8 +778,7 @@ H5check_version(unsigned majnum, unsigne
              disable_version_check = (unsigned int)HDstrtol (s, NULL, 0);
      }
  
@@ -20,38 +20,3 @@ Index: hdf5/src/H5.c
          switch (disable_version_check) {
  	case 0:
  	    HDfprintf(stderr, "%s%s", version_mismatch_warning,
-Index: hdf5/test/testcheck_version.sh.in
-===================================================================
---- hdf5.orig/test/testcheck_version.sh.in
-+++ hdf5/test/testcheck_version.sh.in
-@@ -152,8 +152,12 @@ TESTING() {
- 	esac
- 	case "$h5DisableVersion" in
- 	    1)
--		# W2/OK: Different Warning, exit 0.
--		WarnMesg2 > $expect
-+		if [ "$wrongversionnumbers" != "r" ]; then
-+		    # W2/OK: Different Warning, exit 0.
-+		    WarnMesg2 > $expect
-+		else
-+		    cp /dev/null $expect
-+		fi
- 		expect_code=0
- 		;;
- 	    [2-9]|[1-9][0-9]*)
-@@ -162,8 +166,13 @@ TESTING() {
- 		expect_code=0
- 		;;
- 	    *)	# W/A:   Warning, abort and exit non-0.
--		WarnMesg > $expect
--		expect_code=6	# Signal Abort exit code (128+6)
-+		if [ "$wrongversionnumbers" != "r" ]; then
-+		    WarnMesg > $expect
-+		    expect_code=6	# Signal Abort exit code (128+6)
-+		else
-+		    cp /dev/null $expect
-+		    expect_code=0
-+		fi
- 		;;
- 	esac
-     fi

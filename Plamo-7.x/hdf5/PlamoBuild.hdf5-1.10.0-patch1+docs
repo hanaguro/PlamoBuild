@@ -1,23 +1,16 @@
 #!/bin/sh
 ##############################################################
 pkgbase="hdf5"
-vers="1.10.6+repack"
-url="http://archive.ubuntu.com/ubuntu/pool/universe/h/hdf5/hdf5_1.10.6+repack.orig.tar.gz"
+vers="1.10.0"
+url="http://archive.ubuntu.com/ubuntu/pool/universe/h/hdf5/hdf5_1.10.0-patch1+docs.orig.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B3
-src="hdf5-1.10.6+repack"
-OPT_CONFIG="--disable-static --enable-shared --enable-fortran=yes --enable-cxx=yes --enable-hl=yes --enable-java=yes"
-DOCS="CMakeInstallation.cmake COPYING COPYING_LBNL_HDF5 README.txt release_docs"
-patchfiles="
-fix-unaligned-accesses.patch
-relax-version-check.patch
-flavor-configure-option.patch
-reproducibility.patch
-path_max.diff
-ullong_force.diff
-"
+build=B1
+src="hdf5-1.10.0-patch1+docs"
+OPT_CONFIG="--disable-static --enable-shared --enable-cxx=yes --enable-hl=yes"
+DOCS="CMakeInstallation.cmake COPYING README.txt release_docs"
+patchfiles="CVE-2016-4330.patch CVE-2016-4331-1.patch CVE-2016-4331-2.patch CVE-2016-4332.patch CVE-2016-4333.patch flavor-configure-option.patch java-runtime-exception.patch path_max.diff relax-version-check.patch ullong_force.diff"
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=txz
@@ -87,7 +80,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
-    make -j16
+    make -j3
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
         exit 255
@@ -102,9 +95,6 @@ if [ $opt_package -eq 1 ] ; then
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
 
-  cd $P/usr/lib
-  ln -s libhdf5.so.103.2.0 libhdf5_hl.so
-  ln -s libhdf5_cpp.so.103.2.0 libhdf5_hl_cpp.so
 ################################
 #      install tweaks
 #  strip binaries, delete locale except ja, compress man,
