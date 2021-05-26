@@ -6,7 +6,7 @@ url="http://archive.ubuntu.com/ubuntu/pool/universe/h/hdf5/hdf5_1.10.6+repack.or
 verify=""
 digest=""
 arch=`uname -m`
-build=B2
+build=B3
 src="hdf5-1.10.6+repack"
 OPT_CONFIG="--disable-static --enable-shared --enable-fortran=yes --enable-cxx=yes --enable-hl=yes --enable-java=yes"
 DOCS="CMakeInstallation.cmake COPYING COPYING_LBNL_HDF5 README.txt release_docs"
@@ -102,6 +102,9 @@ if [ $opt_package -eq 1 ] ; then
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
 
+  cd $P/usr/lib
+  ln -s libhdf5.so.103.2.0 libhdf5_hl.so
+  ln -s libhdf5_cpp.so.103.2.0 libhdf5_hl_cpp.so
 ################################
 #      install tweaks
 #  strip binaries, delete locale except ja, compress man,
