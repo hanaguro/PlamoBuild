@@ -8,7 +8,7 @@ digest=""
 arch=`uname -m`
 build=B2
 src="hdf5-1.10.6+repack"
-OPT_CONFIG="--disable-static --enable-shared"
+OPT_CONFIG="--disable-static --enable-shared --enable-fortran=yes --enable-cxx=yes --enable-hl=yes --enable-java=yes"
 DOCS="CMakeInstallation.cmake COPYING COPYING_LBNL_HDF5 README.txt release_docs"
 patchfiles="
 fix-unaligned-accesses.patch
@@ -87,7 +87,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
-    make -j3
+    make -j16
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
         exit 255
