@@ -6,11 +6,18 @@ url="http://archive.ubuntu.com/ubuntu/pool/universe/h/hdf5/hdf5_1.10.6+repack.or
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B2
 src="hdf5-1.10.6+repack"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS="CMakeInstallation.cmake COPYING COPYING_LBNL_HDF5 README.txt release_docs"
-patchfiles=""
+patchfiles="
+fix-unaligned-accesses.patch
+relax-version-check.patch
+flavor-configure-option.patch
+reproducibility.patch
+path_max.diff
+ullong_force.diff
+"
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=txz
@@ -42,6 +49,7 @@ if [ $opt_download -eq 1 ] ; then
     download_sources
 fi
 
+
 if [ $opt_config -eq 1 ] ; then
 
     for f in $addfiles $patchfiles
@@ -53,20 +61,23 @@ if [ $opt_config -eq 1 ] ; then
     done
 
 ######################################################################
-#  source copy build. patch apply in build dir
+#  out of tree build. patch apply in src dir
 ######################################################################
-    if [ -d $B ] ; then rm -rf $B ; fi ;  cp -a $S $B  
-    cd $B
+    if [ -d $B ] ; then rm -rf $B ; fi ; mkdir -p $B 
+    cd $S
     for patch in $patchfiles ; do
-       patch -p1 < $W/$patch
+        if [ ! -f .${patch} ]; then
+            patch -p1 < $W/$patch
+            touch .${patch}
+        fi
     done
     # if [ -f autogen.sh ] ; then
     #   sh ./autogen.sh
     # fi
-
+    cd $B
     export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
     export LDFLAGS='-Wl,--as-needed' 
-    ./configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
+    $S/configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
     if [ $? != 0 ]; then
         echo "configure error. $0 script stop"
         exit 255
