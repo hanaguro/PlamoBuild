@@ -1,12 +1,12 @@
 #!/bin/sh
 ##############################################################
-pkgbase="protobuf"
+pkgbase="python_protobuf"
 vers="3.13.0"
 url="https://files.pythonhosted.org/packages/25/ef/8f36bc7e4c3dcad241a9e7a51520d30712a7abc034343bed841ff4ea3289/protobuf-3.13.0.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B3
 src="protobuf-3.13.0"
 OPT_CONFIG=""
 DOCS="README.md"
