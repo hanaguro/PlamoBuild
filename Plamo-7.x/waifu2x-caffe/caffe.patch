@@ -1,0 +1,446 @@
+diff -uprN Qengineering-caffe.orig/include/caffe/common.hpp Qengineering-caffe/include/caffe/common.hpp
+--- Qengineering-caffe.orig/include/caffe/common.hpp	2021-06-03 00:57:52.426499065 +0900
++++ Qengineering-caffe/include/caffe/common.hpp	2021-06-03 00:58:33.880373449 +0900
+@@ -16,6 +16,11 @@
+ #include <utility>  // pair
+ #include <vector>
+ 
++#ifdef _MSC_VER
++// fence this include inside VS specific macro
++// to avoid breaking the Linux Makefile build
++#include "caffe/export.hpp"
++#endif
+ #include "caffe/util/device_alternate.hpp"
+ 
+ // Convert macro to string
+@@ -37,11 +42,20 @@ private:\
+   classname(const classname&);\
+   classname& operator=(const classname&)
+ 
++
++#ifndef _MSC_VER
++#define DEFINE_FORCE_LINK_SYMBOL(classname, token)
++#else
++#define DEFINE_FORCE_LINK_SYMBOL(classname, token) \
++  int g_caffe_force_link_##token##_##classname = 0
++#endif
++
+ // Instantiate a class with float and double specifications.
+ #define INSTANTIATE_CLASS(classname) \
+   char gInstantiationGuard##classname; \
+   template class classname<float>; \
+-  template class classname<double>
++  template class classname<double>; \
++  DEFINE_FORCE_LINK_SYMBOL(classname, instantiate);
+ 
+ #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
+   template void classname<float>::Forward_gpu( \
+@@ -49,7 +63,8 @@ private:\
+       const std::vector<Blob<float>*>& top); \
+   template void classname<double>::Forward_gpu( \
+       const std::vector<Blob<double>*>& bottom, \
+-      const std::vector<Blob<double>*>& top);
++      const std::vector<Blob<double>*>& top); \
++      DEFINE_FORCE_LINK_SYMBOL(classname, forward_gpu);
+ 
+ #define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
+   template void classname<float>::Backward_gpu( \
+@@ -59,7 +74,8 @@ private:\
+   template void classname<double>::Backward_gpu( \
+       const std::vector<Blob<double>*>& top, \
+       const std::vector<bool>& propagate_down, \
+-      const std::vector<Blob<double>*>& bottom)
++      const std::vector<Blob<double>*>& bottom); \
++      DEFINE_FORCE_LINK_SYMBOL(classname, backward_gpu);
+ 
+ #define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
+   INSTANTIATE_LAYER_GPU_FORWARD(classname); \
+@@ -69,16 +85,6 @@ private:\
+ // is executed we will see a fatal log.
+ #define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented Yet"
+ 
+-// Supporting OpenCV4
+-#if (CV_MAJOR_VERSION == 4)
+-#define CV_LOAD_IMAGE_COLOR cv::IMREAD_COLOR
+-#define CV_LOAD_IMAGE_GRAYSCALE cv::IMREAD_GRAYSCALE
+-#define CV_CAP_PROP_FRAME_COUNT cv::CAP_PROP_FRAME_COUNT
+-#define CV_CAP_PROP_POS_FRAMES cv::CAP_PROP_POS_FRAMES
+-#define CV_FILLED cv::FILLED
+-#define CV_FOURCC cv::VideoWriter::fourcc
+-#endif
+-
+ // See PR #1236
+ namespace cv { class Mat; }
+ 
+@@ -113,12 +119,13 @@ class Caffe {
+  public:
+   ~Caffe();
+ 
++  enum Brew { CPU, GPU };
++
+   // Thread local context for Caffe. Moved to common.cpp instead of
+   // including boost/thread.hpp to avoid a boost/NVCC issues (#1009, #1010)
+   // on OSX. Also fails on Linux with CUDA 7.0.18.
+   static Caffe& Get();
+-
+-  enum Brew { CPU, GPU };
++  static Caffe& Get(Brew m);
+ 
+   // This random number generator facade hides boost and CUDA rng
+   // implementation from one another (for cross-platform compatibility).
+@@ -142,8 +149,10 @@ class Caffe {
+     return *(Get().random_generator_);
+   }
+ #ifndef CPU_ONLY
+-  inline static cublasHandle_t cublas_handle() { return Get().cublas_handle_; }
++  void init_cu_handle();
++  inline static cublasHandle_t cublas_handle() { Get().init_cu_handle(); return Get().cublas_handle_; }
+   inline static curandGenerator_t curand_generator() {
++    Get().init_cu_handle();
+     return Get().curand_generator_;
+   }
+ #endif
+@@ -155,7 +164,7 @@ class Caffe {
+   // into the program since that may cause allocation of pinned memory being
+   // freed in a non-pinned way, which may cause problems - I haven't verified
+   // it personally but better to note it here in the header file.
+-  inline static void set_mode(Brew mode) { Get().mode_ = mode; }
++  static void set_mode(Brew mode);
+   // Sets the random seed of both boost and curand
+   static void set_random_seed(const unsigned int seed);
+   // Sets the device. Since we have cublas and curand stuff, set device also
+@@ -174,6 +183,16 @@ class Caffe {
+   inline static bool root_solver() { return Get().root_solver_; }
+   inline static void set_root_solver(bool val) { Get().root_solver_ = val; }
+ 
++  static void SetGetcuDNNAlgorithmFunc(int (*func)(const char *layer_name, int num_input, int num_output, int batch_size,
++	  int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h));
++  static int GetcuDNNAlgorithm(const char *layer_name, int num_input, int num_output, int batch_size,
++	  int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h);
++
++  static void SetSetcuDNNAlgorithmFunc(void(*func)(int algo, const char *layer_name, int num_input, int num_output, int batch_size,
++	  int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h));
++  static void SetcuDNNAlgorithm(int algo, const char *layer_name, int num_input, int num_output, int batch_size,
++	  int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h);
++
+  protected:
+ #ifndef CPU_ONLY
+   cublasHandle_t cublas_handle_;
+@@ -188,6 +207,7 @@ class Caffe {
+  private:
+   // The private constructor to avoid duplicate instantiation.
+   Caffe();
++  Caffe(Brew m);
+ 
+   DISABLE_COPY_AND_ASSIGN(Caffe);
+ };
+diff -uprN Qengineering-caffe.orig/include/caffe/util/cudnn_func.hpp Qengineering-caffe/include/caffe/util/cudnn_func.hpp
+--- Qengineering-caffe.orig/include/caffe/util/cudnn_func.hpp	1970-01-01 09:00:00.000000000 +0900
++++ Qengineering-caffe/include/caffe/util/cudnn_func.hpp	2021-06-03 00:58:33.885373434 +0900
+@@ -0,0 +1,58 @@
++#ifndef CAFFE_UTIL_CUDNN_FUNC_H_
++#define CAFFE_UTIL_CUDNN_FUNC_H_
++
++#ifdef USE_CUDNN
++
++#include "caffe/util/cudnn.hpp"
++#include "caffe/blob.hpp"
++#include "caffe/util/device_alternate.hpp"
++
++namespace caffe {
++
++namespace cudnn {
++
++template <typename Dtype>
++cudnnStatus_t FindConvolutionForwardAlgorithmEx(
++	cudnnHandle_t                       handle[],
++	const cudnnTensorDescriptor_t       bottom_descs[],
++	const Blob<Dtype>*const*            bottom,
++	const cudnnFilterDescriptor_t       filter_desc,
++	const Blob<Dtype>*                  blob,
++	const cudnnConvolutionDescriptor_t  conv_descs[],
++	const cudnnTensorDescriptor_t       top_descs[],
++	Blob<Dtype>*const*                  top,
++	cudnnConvolutionFwdAlgo_t           algos[],
++	int                                 count);
++
++template <typename Dtype>
++cudnnStatus_t FindConvolutionBackwardFilterAlgorithmEx(
++	cudnnHandle_t                       handle[],
++	const cudnnTensorDescriptor_t       bottom_descs[],
++	const Blob<Dtype>*const*            bottom,
++	const cudnnTensorDescriptor_t       top_descs[],
++	const Blob<Dtype>*const*            top,
++	const cudnnConvolutionDescriptor_t  conv_descs[],
++	const cudnnFilterDescriptor_t       filter_desc,
++	int                                 weights_size,
++	cudnnConvolutionBwdFilterAlgo_t     algos[],
++	int                                 count);
++
++template <typename Dtype>
++cudnnStatus_t FindConvolutionBackwardDataAlgorithmEx(
++	cudnnHandle_t                       handle[],
++	const cudnnFilterDescriptor_t       filter_desc,
++	const Blob<Dtype>*                  blob,
++	const cudnnTensorDescriptor_t       top_descs[],
++	const Blob<Dtype>*const*            top,
++	const cudnnConvolutionDescriptor_t  conv_descs[],
++	const cudnnTensorDescriptor_t       bottom_descs[],
++	Blob<Dtype>*const*                  bottom,
++	cudnnConvolutionBwdDataAlgo_t       algos[],
++	int                                 count);
++
++}  // namespace cudnn
++
++}  // namespace caffe
++
++#endif  // USE_CUDNN
++#endif  // CAFFE_UTIL_CUDNN_FUNC_H_
+diff -uprN Qengineering-caffe.orig/include/caffe/util/msvc.hpp Qengineering-caffe/include/caffe/util/msvc.hpp
+--- Qengineering-caffe.orig/include/caffe/util/msvc.hpp	1970-01-01 09:00:00.000000000 +0900
++++ Qengineering-caffe/include/caffe/util/msvc.hpp	2021-06-03 00:58:33.884373437 +0900
+@@ -0,0 +1,26 @@
++#ifndef CAFFE_UTIL_MSVC_H_
++#define CAFFE_UTIL_MSVC_H_
++
++#ifdef _MSC_VER
++#define WIN32_LEAN_AND_MEAN
++#define NOMINMAX
++#include <windows.h>
++#include <direct.h>
++
++#if _MSC_VER >= 1400  // VC 8.0 and later deprecate snprintf and _snprintf.
++# define snprintf _snprintf_s
++#else
++# define snprintf _snprintf
++#endif
++
++#define getpid _getpid
++
++#define  mkdir(str, mode) _mkdir(str)
++
++#define __builtin_popcount __popcnt
++#define __builtin_popcountl __popcnt64
++
++#endif  // _MSC_VER
++
++
++#endif
+diff -uprN Qengineering-caffe.orig/src/caffe/common.cpp Qengineering-caffe/src/caffe/common.cpp
+--- Qengineering-caffe.orig/src/caffe/common.cpp	2021-06-03 00:57:52.438499029 +0900
++++ Qengineering-caffe/src/caffe/common.cpp	2021-06-03 00:58:33.882373443 +0900
+@@ -3,14 +3,23 @@
+ #include <cmath>
+ #include <cstdio>
+ #include <ctime>
++#ifdef _MSC_VER
++#include <process.h>
++#endif
+ 
+ #include "caffe/common.hpp"
+ #include "caffe/util/rng.hpp"
++#include "caffe/util/msvc.hpp"
++#include "caffe/util/cudnn_func.hpp"
+ 
+ namespace caffe {
+ 
+ // Make sure each thread can have different values.
+ static boost::thread_specific_ptr<Caffe> thread_instance_;
++static int(*GetcuDNNAlgorithmFunc_)(const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h) = nullptr;
++static void(*SetcuDNNAlgorithmFunc_)(int algo, const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h) = nullptr;
+ 
+ Caffe& Caffe::Get() {
+   if (!thread_instance_.get()) {
+@@ -19,6 +28,15 @@ Caffe& Caffe::Get() {
+   return *(thread_instance_.get());
+ }
+ 
++Caffe& Caffe::Get(Brew m) {
++  if (!thread_instance_.get()) {
++    thread_instance_.reset(new Caffe(m));
++  } else {
++    thread_instance_.get()->mode_ = m;
++  }
++  return *(thread_instance_.get());
++}
++
+ // random seeding
+ int64_t cluster_seedgen(void) {
+   int64_t s, seed, pid;
+@@ -46,7 +64,9 @@ void GlobalInit(int* pargc, char*** parg
+   // Google logging.
+   ::google::InitGoogleLogging(*(pargv)[0]);
+   // Provide a backtrace on segfault.
++#ifndef _MSC_VER  // InstallFailureSignalHandler is not defined windows glog
+   ::google::InstallFailureSignalHandler();
++#endif
+ }
+ 
+ #ifdef CPU_ONLY  // CPU-only Caffe.
+@@ -57,6 +77,11 @@ Caffe::Caffe()
+ 
+ Caffe::~Caffe() { }
+ 
++void Caffe::set_mode(Brew mode) {
++  Get(mode).mode_ = mode;
++  init_cu_handle();
++}
++
+ void Caffe::set_random_seed(const unsigned int seed) {
+   // RNG seed
+   Get().random_generator_.reset(new RNG(seed));
+@@ -107,18 +132,11 @@ void* Caffe::RNG::generator() {
+ Caffe::Caffe()
+     : cublas_handle_(NULL), curand_generator_(NULL), random_generator_(),
+     mode_(Caffe::CPU), solver_count_(1), root_solver_(true) {
+-  // Try to create a cublas handler, and report an error if failed (but we will
+-  // keep the program running as one might just want to run CPU code).
+-  if (cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
+-    LOG(ERROR) << "Cannot create Cublas handle. Cublas won't be available.";
+-  }
+-  // Try to create a curand handler.
+-  if (curandCreateGenerator(&curand_generator_, CURAND_RNG_PSEUDO_DEFAULT)
+-      != CURAND_STATUS_SUCCESS ||
+-      curandSetPseudoRandomGeneratorSeed(curand_generator_, cluster_seedgen())
+-      != CURAND_STATUS_SUCCESS) {
+-    LOG(ERROR) << "Cannot create Curand generator. Curand won't be available.";
+-  }
++}
++
++Caffe::Caffe(Brew m)
++    : cublas_handle_(NULL), curand_generator_(NULL), random_generator_(),
++    mode_(m), solver_count_(1), root_solver_(true) {
+ }
+ 
+ Caffe::~Caffe() {
+@@ -128,25 +146,56 @@ Caffe::~Caffe() {
+   }
+ }
+ 
++void Caffe::init_cu_handle()
++{
++	if (mode_ == Caffe::CPU)
++		return;
++
++	// Try to create a cublas handler, and report an error if failed (but we will
++	// keep the program running as one might just want to run CPU code).
++	if (!cublas_handle_ && cublasCreate(&cublas_handle_) != CUBLAS_STATUS_SUCCESS) {
++		LOG(ERROR) << "Cannot create Cublas handle. Cublas won't be available.";
++	}
++
++	// Try to create a curand handler.
++	if ((!curand_generator_ && curandCreateGenerator(&curand_generator_, CURAND_RNG_PSEUDO_DEFAULT) != CURAND_STATUS_SUCCESS) ||
++		(!curand_generator_ && curandSetPseudoRandomGeneratorSeed(curand_generator_, cluster_seedgen()) != CURAND_STATUS_SUCCESS)) {
++		LOG(ERROR) << "Cannot create Curand generator. Curand won't be available.";
++	}
++}
++
++void Caffe::set_mode(Brew mode) {
++	Get(mode).init_cu_handle();
++}
++
+ void Caffe::set_random_seed(const unsigned int seed) {
+-  // Curand seed
+-  static bool g_curand_availability_logged = false;
+-  if (Get().curand_generator_) {
+-    CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curand_generator(),
+-        seed));
+-    CURAND_CHECK(curandSetGeneratorOffset(curand_generator(), 0));
+-  } else {
+-    if (!g_curand_availability_logged) {
+-        LOG(ERROR) <<
+-            "Curand not available. Skipping setting the curand seed.";
+-        g_curand_availability_logged = true;
+-    }
+-  }
+-  // RNG seed
+-  Get().random_generator_.reset(new RNG(seed));
++	Caffe &caffe = Get();
++	if (mode() == Caffe::GPU) {
++		caffe.init_cu_handle();
++
++		// Curand seed
++		static bool g_curand_availability_logged = false;
++		if (Get().curand_generator_) {
++			CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(curand_generator(),
++				seed));
++			CURAND_CHECK(curandSetGeneratorOffset(curand_generator(), 0));
++		}
++		else {
++			if (!g_curand_availability_logged) {
++				LOG(ERROR) <<
++					"Curand not available. Skipping setting the curand seed.";
++				g_curand_availability_logged = true;
++			}
++		}
++	}
++	// RNG seed
++	caffe.random_generator_.reset(new RNG(seed));
+ }
+ 
+ void Caffe::SetDevice(const int device_id) {
++  if (mode() == Caffe::CPU)
++    return;
++
+   int current_device;
+   CUDA_CHECK(cudaGetDevice(&current_device));
+   if (current_device == device_id) {
+@@ -202,6 +251,9 @@ void Caffe::DeviceQuery() {
+ }
+ 
+ bool Caffe::CheckDevice(const int device_id) {
++  if (mode() == Caffe::CPU)
++    return false;
++
+   // This function checks the availability of GPU #device_id.
+   // It attempts to create a context on the device by calling cudaFree(0).
+   // cudaSetDevice() alone is not sufficient to check the availability.
+@@ -223,6 +275,9 @@ bool Caffe::CheckDevice(const int device
+ }
+ 
+ int Caffe::FindDevice(const int start_id) {
++  if (mode() == Caffe::CPU)
++    return -1;
++
+   // This function finds the first available device by checking devices with
+   // ordinal from start_id to the highest available value. In the
+   // EXCLUSIVE_PROCESS or EXCLUSIVE_THREAD mode, if it succeeds, it also
+@@ -235,6 +290,36 @@ int Caffe::FindDevice(const int start_id
+   return -1;
+ }
+ 
++void Caffe::SetGetcuDNNAlgorithmFunc(int(*func)(const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h))
++{
++	GetcuDNNAlgorithmFunc_ = func;
++}
++
++int Caffe::GetcuDNNAlgorithm(const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h)
++{
++	if (!GetcuDNNAlgorithmFunc_)
++		return -1;
++
++	return GetcuDNNAlgorithmFunc_(layer_name, num_input, num_output, batch_size, width, height, kernel_w, kernel_h, pad_w, pad_h, stride_w, stride_h);
++}
++
++void Caffe::SetSetcuDNNAlgorithmFunc(void(*func)(int algo, const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h))
++{
++	SetcuDNNAlgorithmFunc_ = func;
++}
++
++void Caffe::SetcuDNNAlgorithm(int algo, const char *layer_name, int num_input, int num_output, int batch_size,
++	int width, int height, int kernel_w, int kernel_h, int pad_w, int pad_h, int stride_w, int stride_h)
++{
++	if (!SetcuDNNAlgorithmFunc_)
++		return;
++
++	SetcuDNNAlgorithmFunc_(algo, layer_name, num_input, num_output, batch_size, width, height, kernel_w, kernel_h, pad_w, pad_h, stride_w, stride_h);
++}
++
+ class Caffe::RNG::Generator {
+  public:
+   Generator() : rng_(new caffe::rng_t(cluster_seedgen())) {}
