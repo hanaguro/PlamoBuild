@@ -4,7 +4,7 @@ pkgbase='lldb'
 vers=12.0.0
 url="https://github.com/llvm/llvm-project.git"
 arch="x86_64"
-build=B1
+build=B2
 src="llvm-project/llvm"
 OPT_CONFIG="
     -DCMAKE_BUILD_TYPE=Release 
@@ -98,7 +98,10 @@ if [ $opt_package -eq 1 ] ; then
 #  DESTDIR=$P ninja install-lldb install-lldb-headers install-lldb-python-scripts install-argdumper install-lldbIntelFeatures install-lldb-test install-lldb-instr install-lldb-serve
   DESTDIR=$P ninja install-lldb install-lldb-headers install-lldb-python-scripts install-lldb-server install-lldb-argdumper install-lldbIntelFeatures install-lldb-test install-lldb-instr install-lldb-vscode 
 
-  cp $B/lib/liblldb.so.* $P/usr/lib/
+  install -D -m 644 $B/lib/liblldb.so.${vers%%.*} $P/usr/lib/liblldb.so.${vers}
+  cd $P/usr/lib/
+  ln -s liblldb.so.${vers} liblldb.so.${vers%.*}
+  ln -s liblldb.so.${vers} liblldb.so.${vers%%.*}
 
 ################################
 #      install tweaks
