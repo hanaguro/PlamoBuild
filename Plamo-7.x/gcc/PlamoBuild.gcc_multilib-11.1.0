@@ -10,7 +10,7 @@ src="gcc-${vers}"
 OPT_CONFIG="--build=${arch}-pc-linux-gnu
 	--host=${arch}-pc-linux-gnu
 	--libexecdir=/usr/lib
-	--enable-languages=c,c++,lto,fortran,d
+	--enable-languages=c,c++,lto,fortran
 	--enable-shared
 	--enable-threads=posix
 	--enable-libmpx
@@ -110,7 +110,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
   cd $B
   export LDFLAGS='-Wl,--as-needed'
-  make -j16
+  make -j3
   if [ $? != 0 ]; then
     echo "build error. $0 script stop"
     exit 255
