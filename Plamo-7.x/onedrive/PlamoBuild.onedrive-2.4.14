@@ -1,13 +1,13 @@
 #!/bin/sh
 ##############################################################
 pkgbase="onedrive"
-vers="2.4.11"
-url="https://github.com/abraunegg/onedrive/archive/refs/tags/v2.4.11.tar.gz"
+vers="2.4.14"
+url="https://github.com/abraunegg/onedrive/archive/refs/tags/v${vers}.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B2
-src="onedrive-2.4.11"
+build=B1
+src="onedrive-${vers}"
 OPT_CONFIG="-enable-notifications --enable-completions"
 DOCS="CHANGELOG.md LICENSE README.md docs"
 patchfiles=""
@@ -17,6 +17,8 @@ compress=txz
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
+export CC=gcc
+export CXX=g++
 
 # このスクリプトで使う1文字変数の意味
 #
@@ -90,6 +92,49 @@ if [ $opt_package -eq 1 ] ; then
 
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
+
+  install -dm755 -v $P/etc/rc.d/init.d
+cat <<"EOF" > $P/etc/rc.d/init.d/onedrive
+#!/bin/sh
+. /lib/lsb/init-functions
+
+case "$1" in
+   start)
+      log_info_msg "Starting onedrive server..."
+      su - takahiro -c '/usr/bin/onedrive --monitor --verbose --enable-logging &> /dev/null ' &
+      evaluate_retval
+      ;;
+
+   stop)
+      log_info_msg "Stopping onedrive server..."
+      killall onedrive
+      evaluate_retval
+      ;;
+
+   restart)
+      $0 stop
+      sleep 1
+      $0 start
+      ;;
+   *)
+      echo "Usage: $0 {start|stop|restart}"
+      exit 1
+      ;;
+esac
+
+# End /etc/init.d/onedrive
+EOF
+
+  chmod +x $P/etc/rc.d/init.d/onedrive
+
+  for i in $(seq 0 6)
+  do
+      install -dm755 -v $P/etc/rc.d/rc"$i".d
+      case $i in
+          0|1|2|6) ln -sf ../init.d/onedrive $P/etc/rc.d/rc"$i".d/K00onedrive ;;
+          3|4|5)   ln -sf ../init.d/onedrive $P/etc/rc.d/rc"$i".d/S99onedrive ;;
+      esac
+  done
 
 ################################
 #      install tweaks
