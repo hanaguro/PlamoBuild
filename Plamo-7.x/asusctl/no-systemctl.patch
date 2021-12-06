@@ -1,0 +1,20 @@
+diff -uprN asusctl-4.0.6/daemon/src/daemon.rs asusctl-4.0.6.new/daemon/src/daemon.rs
+--- asusctl-4.0.6/daemon/src/daemon.rs	2021-11-01 12:03:40.000000000 +0900
++++ asusctl-4.0.6.new/daemon/src/daemon.rs	2021-12-07 08:47:16.900692678 +0900
+@@ -43,6 +43,7 @@ pub fn main() -> Result<(), Box<dyn std:
+         .filter(None, LevelFilter::Info)
+         .init();
+ 
++/*
+     let is_service = match env::var_os("IS_SERVICE") {
+         Some(val) => val == "1",
+         None => false,
+@@ -56,7 +57,7 @@ pub fn main() -> Result<(), Box<dyn std:
+         println!("asusd will now exit");
+         return Ok(());
+     }
+-
++*/
+     info!("       daemon v{}", daemon::VERSION);
+     info!("    rog-anime v{}", rog_anime::VERSION);
+     info!("     rog-aura v{}", rog_aura::VERSION);
