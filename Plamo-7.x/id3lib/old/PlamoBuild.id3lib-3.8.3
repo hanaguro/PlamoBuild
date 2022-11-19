@@ -6,14 +6,14 @@ url="https://sourceforge.net/projects/id3lib/files/id3lib/3.8.3/id3lib-3.8.3.tar
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B2
 src="id3lib-3.8.3"
 OPT_CONFIG="--disable-static --enable-shared"
-DOCS="AUTHORS COPYING ChangeLog HISTORY INSTALL NEWS README THANKS TODO doc"
-patchfiles=""
+DOCS="AUTHORS COPYING ChangeLog HISTORY INSTALL NEWS README THANKS TODO"
+patchfiles="no-iomanip.h.patch"
 # specifies files that are not in source archive and patchfiles
 addfiles=""
-compress=tzst
+compress=txz
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
@@ -60,18 +60,14 @@ if [ $opt_config -eq 1 ] ; then
     for patch in $patchfiles ; do
        patch -p1 < $W/$patch
     done
-    # if [ -f autogen.sh ] ; then
-    #   sh ./autogen.sh
-    # fi
+    #if [ -f autogen.sh ] ; then
+    #  sh ./autogen.sh
+    #fi
+	autoconf
 
-    sed -i -e 's/[(space)(tab)]*iomanip.h[(space)(tab)]*//'  $B/configure
-    sed -i -e 's/iomanip//'  $B/configure
-    sed -i -e 's/#include <string>/#include <string>\n#include <cstring>/' $B/include/id3/id3lib_strings.h 
-    sed -i -e 's/#include <string.h>/#include <string.h>\n#include <cstring>/' $B/include/id3/writers.h 
-
-    export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
+    export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/share/pkgconfig
     export LDFLAGS='-Wl,--as-needed' 
-    ./configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
+    ./configure --prefix=//usr --sysconfdir=/etc --localstatedir=/var --mandir='${prefix}'/share/man ${OPT_CONFIG}
     if [ $? != 0 ]; then
         echo "configure error. $0 script stop"
         exit 255
@@ -95,6 +91,8 @@ if [ $opt_package -eq 1 ] ; then
 
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
+
+  install -Dm0644 $W/id3tag.pc $P/usr/share/pkgconfig/id3tag.pc
 
 ################################
 #      install tweaks
