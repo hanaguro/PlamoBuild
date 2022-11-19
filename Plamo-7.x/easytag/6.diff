@@ -1,0 +1,197 @@
+diff --git a/nautilus-extension/nautilus-easytag.c b/nautilus-extension/nautilus-easytag.c
+index 32cd145c3fbc21a2879b88b55726d8d99abf7777..c337641f0ad18bd233da648c944125a809b2078c 100644
+--- a/nautilus-extension/nautilus-easytag.c
++++ b/nautilus-extension/nautilus-easytag.c
+@@ -22,9 +22,7 @@
+ #include <gio/gio.h>
+ #include <gio/gdesktopappinfo.h>
+ #include <glib/gi18n-lib.h>
+-#include <libnautilus-extension/nautilus-extension-types.h>
+-#include <libnautilus-extension/nautilus-file-info.h>
+-#include <libnautilus-extension/nautilus-menu-provider.h>
++#include <nautilus-extension.h>
+ 
+ #define NAUTILUS_TYPE_EASYTAG (nautilus_easytag_get_type ())
+ #define NAUTILUS_EASYTAG(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NAUTILUS_TYPE_EASYTAG, NautilusEasytag))
+diff --git a/src/file.c b/src/file.c
+index b4c7bcea21cc65a6fb7c610e626af67f920197bf..9dcdbabbd401d3e2bebb7f6b2bd1bbc27a92bd82 100644
+--- a/src/file.c
++++ b/src/file.c
+@@ -1700,13 +1700,12 @@ et_file_check_saved (const ET_File *ETFile)
+  *******************/
+ 
+ /*
+- * Set to TRUE the value of 'FileTag->saved' for the File_Tag item passed in parameter.
+- * And set ALL other values of the list to FALSE.
++ * Set to FALSE the value of 'FileTag->saved' for the File_Tag item passed in parameter.
+  */
+ static void
+-Set_Saved_Value_Of_File_Tag (File_Tag *FileTag, gboolean saved)
++Set_Saved_Value_Of_File_Tag (File_Tag *FileTag, gpointer userdata)
+ {
+-    if (FileTag) FileTag->saved = saved;
++    if (FileTag) FileTag->saved = FALSE;
+ }
+ 
+ static void
+@@ -1717,7 +1716,7 @@ ET_Mark_File_Tag_As_Saved (ET_File *ETFile)
+ 
+     FileTag     = (File_Tag *)ETFile->FileTag->data;    // The current FileTag, to set to TRUE
+     FileTagList = ETFile->FileTagList;
+-    g_list_foreach(FileTagList,(GFunc)Set_Saved_Value_Of_File_Tag,FALSE); // All other FileTag set to FALSE
++    g_list_foreach(FileTagList, (GFunc)Set_Saved_Value_Of_File_Tag, NULL); // All other FileTag set to FALSE
+     FileTag->saved = TRUE; // The current FileTag set to TRUE
+ }
+ 
+@@ -1729,7 +1728,7 @@ void ET_Mark_File_Name_As_Saved (ET_File *ETFile)
+ 
+     FileNameNew  = (File_Name *)ETFile->FileNameNew->data;    // The current FileName, to set to TRUE
+     FileNameList = ETFile->FileNameList;
+-    g_list_foreach(FileNameList,(GFunc)Set_Saved_Value_Of_File_Tag,FALSE);
++    g_list_foreach(FileNameList, (GFunc)Set_Saved_Value_Of_File_Tag, NULL);
+     FileNameNew->saved = TRUE;
+ }
+ 
+diff --git a/src/picture.h b/src/picture.h
+index 5f62bc5f6a5eabf06bb9bcfc8f06bf4e8922365c..d68762889375d826ca631202a2b7d2be06dab5bf 100644
+--- a/src/picture.h
++++ b/src/picture.h
+@@ -30,7 +30,7 @@ G_BEGIN_DECLS
+ 
+ typedef enum // Picture types
+ {
+-    // Same values for FLAC, see: http://flac.sourceforge.net/api/group__flac__format.html#ga113
++    // Same values for FLAC, see: https://xiph.org/flac/api/group__flac__format.html#gaf6d3e836cee023e0b8d897f1fdc9825d
+     ET_PICTURE_TYPE_OTHER = 0,
+     ET_PICTURE_TYPE_FILE_ICON,
+     ET_PICTURE_TYPE_OTHER_FILE_ICON,
+diff --git a/src/tags/flac_tag.c b/src/tags/flac_tag.c
+index 1b02e29a8f3220a92d999b0d491557f42df27590..6793006577c1a412c2a6e6eb890258f2580910d5 100644
+--- a/src/tags/flac_tag.c
++++ b/src/tags/flac_tag.c
+@@ -530,7 +530,7 @@ flac_tag_read_file_tag (GFile *file,
+ 
+             bytes = g_bytes_new (p->data, p->data_length);
+         
+-            pic = et_picture_new (p->type, (const gchar *)p->description,
++            pic = et_picture_new ((EtPictureType) p->type, (const gchar *)p->description,
+                                   0, 0, bytes);
+             g_bytes_unref (bytes);
+ 
+@@ -1010,8 +1010,8 @@ flac_tag_write_file_tag (const ET_File *ETFile,
+                 picture_block = FLAC__metadata_object_new(FLAC__METADATA_TYPE_PICTURE);
+                 
+                 // Type
+-                picture_block->data.picture.type = pic->type;
+                 
++                picture_block->data.picture.type = (FLAC__StreamMetadata_Picture_Type) pic->type;
+                 // Mime type
+                 format = Picture_Format_From_Data(pic);
+                 /* Safe to pass a const string, according to the FLAC API
+diff --git a/src/tags/id3_tag.c b/src/tags/id3_tag.c
+index 1288caceb31c1e960cec7092d4a3abdd5508280b..3a2546589ccba7ec4bebea82422a233a6c9a1625 100644
+--- a/src/tags/id3_tag.c
++++ b/src/tags/id3_tag.c
+@@ -1085,7 +1085,7 @@ gchar *Id3tag_Get_Field (const ID3Frame *id3_frame, ID3_FieldID id3_fieldid)
+                 // Id3lib (3.8.3 at least) always returns Unicode strings in UTF-16BE.
+             case ID3TE_UTF16BE:
+                 string = g_malloc0(sizeof(unicode_t)*ID3V2_MAX_STRING_LEN+1);
+-                num_chars = ID3Field_GetUNICODE_1(id3_field,(unicode_t *)string,ID3V2_MAX_STRING_LEN,0);
++                num_chars = ID3Field_GetUNICODE_1(id3_field,(unicode_t *)(gpointer)string,ID3V2_MAX_STRING_LEN,0);
+                 // "convert_string_1" as we need to pass length for UTF-16
+                 string1 = convert_string_1(string,num_chars,"UTF-16BE","UTF-8",FALSE);
+                 break;
+@@ -1279,7 +1279,7 @@ Id3tag_Set_Field (const ID3Frame *id3_frame,
+                 // id3lib (3.8.3 at least) always takes big-endian input for Unicode
+                 // fields, even if the field is set little-endian.
+                 ID3Field_SetEncoding(id3_field,ID3TE_UTF16);
+-                ID3Field_SetUNICODE(id3_field,(const unicode_t*)string_converted);
++                ID3Field_SetUNICODE(id3_field,(const unicode_t*)(gpointer)string_converted);
+                 g_free(string_converted);
+ 
+                 id3_field_encoding = ID3Frame_GetField(id3_frame,ID3FN_TEXTENC);
+@@ -1375,7 +1375,7 @@ void Id3tag_Prepare_ID3v1 (ID3Tag *id3_tag)
+ 
+                 /* Read UTF-16 frame. */
+                 string = g_malloc0(sizeof(unicode_t)*ID3V2_MAX_STRING_LEN+1);
+-                num_chars = ID3Field_GetUNICODE_1(id3_field_text,(unicode_t *)string,ID3V2_MAX_STRING_LEN,0);
++                num_chars = ID3Field_GetUNICODE_1(id3_field_text,(unicode_t *)(gpointer)string,ID3V2_MAX_STRING_LEN,0);
+                 // "convert_string_1" as we need to pass length for UTF-16
+                 string1 = convert_string_1(string,num_chars,"UTF-16BE","UTF-8",FALSE);
+ 
+diff --git a/src/tags/vcedit.c b/src/tags/vcedit.c
+index c662e844da0e74b4d94f44dcbe20e2647a79c796..4016f83396934ce335824c6f0ca40aae1e8cce5f 100644
+--- a/src/tags/vcedit.c
++++ b/src/tags/vcedit.c
+@@ -431,15 +431,17 @@ vcedit_supported_stream (EtOggState *state,
+         result = ET_OGG_KIND_UNKNOWN;
+ 
+ #ifdef ENABLE_SPEEX
+-        SpeexHeader *speex;
+-
+-        /* Done after "Ogg test" to avoid to display an error message in
+-         * function speex_packet_to_header() when the file is not Speex. */
+-        if ((speex = speex_packet_to_header ((char*)(&header)->packet,
+-                                             (&header)->bytes)))
+         {
+-            result = ET_OGG_KIND_SPEEX;
+-            speex_header_free (speex);
++            SpeexHeader *speex;
++
++            /* Done after "Ogg test" to avoid to display an error message in
++             * function speex_packet_to_header() when the file is not Speex. */
++            if ((speex = speex_packet_to_header ((char*)(&header)->packet,
++                            (&header)->bytes)))
++            {
++                result = ET_OGG_KIND_SPEEX;
++                speex_header_free (speex);
++            }
+         }
+ #endif
+ 
+@@ -572,8 +574,12 @@ vcedit_open (EtOggState *state,
+             state->oi = g_slice_new (OpusHead);
+ 
+             /* TODO: Check for success. */
+-            opus_head_parse (state->oi, (unsigned char*)(&header_main)->packet,
+-                             (&header_main)->bytes);
++            if (opus_head_parse (state->oi, (unsigned char*)(&header_main)->packet,
++                                 (&header_main)->bytes)!= 0) {
++                g_set_error(error, ET_OGG_ERROR, ET_OGG_ERROR_INVALID,
++                            "Failed to parse opus header");
++                goto err;
++            }
+             break;
+ #endif
+ #ifndef ENABLE_SPEEX
+@@ -583,12 +589,10 @@ vcedit_open (EtOggState *state,
+         case ET_OGG_KIND_OPUS:
+ #endif
+         case ET_OGG_KIND_UNKNOWN:
++        case ET_OGG_KIND_UNSUPPORTED:
+             /* TODO: Translatable string. */
+             g_set_error (error, ET_OGG_ERROR, ET_OGG_ERROR_INVALID,
+-                         "Ogg bitstream contains unknown data");
+-            goto err;
+-            break;
+-        case ET_OGG_KIND_UNSUPPORTED:
++                         "Ogg bitstream contains unknown or unsupported data");
+             goto err;
+             break;
+         default:
+@@ -621,6 +625,7 @@ vcedit_open (EtOggState *state,
+         case ET_OGG_KIND_OPUS:
+ #endif
+         case ET_OGG_KIND_UNKNOWN:
++        case ET_OGG_KIND_UNSUPPORTED:
+         default:
+             g_assert_not_reached ();
+             break;
+@@ -731,6 +736,7 @@ vcedit_open (EtOggState *state,
+                         case ET_OGG_KIND_OPUS:
+ #endif
+                         case ET_OGG_KIND_UNKNOWN:
++                        case ET_OGG_KIND_UNSUPPORTED:
+                         default:
+                             g_assert_not_reached ();
+                             break;
