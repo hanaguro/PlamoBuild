@@ -1,6 +1,6 @@
 diff -uprN alpine-2.26/alpine/keymenu.c alpine-2.26.new/alpine/keymenu.c
 --- alpine-2.26/alpine/keymenu.c	2022-06-03 09:14:00.463274817 +0900
-+++ alpine-2.26.new/alpine/keymenu.c	2023-02-09 00:32:42.090432983 +0900
++++ alpine-2.26.new/alpine/keymenu.c	2023-02-09 01:25:28.710492748 +0900
 @@ -671,7 +671,7 @@ struct key index_keys[] =
  	OTHER_MENU,
  	{":",N_("SelectCur"),{MC_SELCUR,1,{':'}},KS_SELECTCUR},
@@ -25,13 +25,13 @@ diff -uprN alpine-2.26/alpine/keymenu.c alpine-2.26.new/alpine/keymenu.c
  	/* TRANSLATORS: go to Previous Attachment */
 -	{"P", N_("PrevAttch"),{MC_PREVITEM,4,{'p',ctrl('B'),ctrl('P'),KEY_UP}},
 +// modified by takahiro
-+	{"P", N_("PrevAttch"),{MC_PREVITEM,4,{'p','k',ctrl('B'),ctrl('P'),KEY_UP}},
++	{"P", N_("PrevAttch"),{MC_PREVITEM,5,{'p','k',ctrl('B'),ctrl('P'),KEY_UP}},
  	  KS_PREVMSG},
  	/* TRANSLATORS: go to Next Attachment */
 +// modified by takahiro
  	{"N", N_("NextAtch"),
 -	 {MC_NEXTITEM, 5, {'n','\t',ctrl('F'),ctrl('N'), KEY_DOWN}},
-+	 {MC_NEXTITEM, 5, {'n','j','\t',ctrl('F'),ctrl('N'), KEY_DOWN}},
++	 {MC_NEXTITEM, 6, {'n','j','\t',ctrl('F'),ctrl('N'), KEY_DOWN}},
  	 KS_NEXTMSG},
  	PREVPAGE_MENU,
  	NEXTPAGE_MENU,
@@ -42,8 +42,8 @@ diff -uprN alpine-2.26/alpine/keymenu.c alpine-2.26.new/alpine/keymenu.c
 -	{"P",N_("PrevCmd"),{MC_PREVITEM,3,{'p',ctrl('P'),KEY_UP}},KS_NONE},
 -	{"N",N_("NextCmd"),{MC_NEXTITEM,3,{'n',ctrl('N'),KEY_DOWN}},KS_NONE},
 +// modified by takahiro
-+	{"P",N_("PrevCmd"),{MC_PREVITEM,3,{'p','k',ctrl('P'),KEY_UP}},KS_NONE},
-+	{"N",N_("NextCmd"),{MC_NEXTITEM,3,{'n','j',ctrl('N'),KEY_DOWN}},KS_NONE},
++	{"P",N_("PrevCmd"),{MC_PREVITEM,4,{'p','k',ctrl('P'),KEY_UP}},KS_NONE},
++	{"N",N_("NextCmd"),{MC_NEXTITEM,4,{'n','j',ctrl('N'),KEY_DOWN}},KS_NONE},
  	NULL_MENU,
  	NULL_MENU,
  	/* TRANSLATORS: show release notes */
@@ -96,7 +96,21 @@ diff -uprN alpine-2.26/alpine/keymenu.c alpine-2.26.new/alpine/keymenu.c
        case ctrl('A') :
 diff -uprN alpine-2.26/alpine/keymenu.h alpine-2.26.new/alpine/keymenu.h
 --- alpine-2.26/alpine/keymenu.h	2022-06-03 09:14:00.463274817 +0900
-+++ alpine-2.26.new/alpine/keymenu.h	2023-02-09 00:27:00.648617238 +0900
++++ alpine-2.26.new/alpine/keymenu.h	2023-02-09 01:33:13.875525141 +0900
+@@ -270,11 +270,11 @@ struct key_menu {
+ 			 KS_EXIT}
+ /* TRANSLATORS: go to Previous Message */
+ #define	PREVMSG_MENU	{"P", N_("PrevMsg"), \
+-			 {MC_PREVITEM, 1, {'p'}}, \
++			 {MC_PREVITEM, 2, {'p','k'}}, \
+ 			 KS_PREVMSG}
+ /* TRANSLATORS: go to Next Message */
+ #define	NEXTMSG_MENU	{"N", N_("NextMsg"), \
+-			 {MC_NEXTITEM, 1, {'n'}}, \
++			 {MC_NEXTITEM, 2, {'n','j'}}, \
+ 			 KS_NEXTMSG}
+ #define	HOMEKEY_MENU	{"Hme", N_("FirstPage"), \
+ 			 {MC_HOMEKEY, 1, {KEY_HOME}}, \
 @@ -290,8 +290,9 @@ struct key_menu {
  			 {MC_PAGEDN, 4, {'+',' ',ctrl('V'),KEY_PGDN}}, \
  			 KS_NEXTPAGE}
@@ -114,18 +128,18 @@ diff -uprN alpine-2.26/alpine/keymenu.h alpine-2.26.new/alpine/keymenu.h
  /* TRANSLATORS: go to the Previous Folder (in a list of folders). */
  #define	PREVF_MENU	{"P", N_("PrevFldr"), \
 -			 {MC_PREV_HANDLE,3,{'p',ctrl('B'),KEY_LEFT}}, \
-+			 {MC_PREV_HANDLE,3,{'p','h',ctrl('B'),KEY_LEFT}}, \
++			 {MC_PREV_HANDLE,4,{'p','h',ctrl('B'),KEY_LEFT}}, \
  			 KS_NONE}
  /* TRANSLATORS: Next Folder (in a list of folders). */
  #define	NEXTF_MENU	{"N", N_("NextFldr"), \
 -			 {MC_NEXT_HANDLE,4,{'n',ctrl('F'),TAB,KEY_RIGHT}}, \
-+			 {MC_NEXT_HANDLE,4,{'n','l',ctrl('F'),TAB,KEY_RIGHT}}, \
++			 {MC_NEXT_HANDLE,5,{'n','l',ctrl('F'),TAB,KEY_RIGHT}}, \
  			 KS_NONE}
  /* TRANSLATORS: Current Index of messages (go to the current index) */
  #define	CIND_MENU	{"I", N_("CurIndex"), \
 diff -uprN alpine-2.26/pico/pilot.c alpine-2.26.new/pico/pilot.c
 --- alpine-2.26/pico/pilot.c	2022-06-03 09:14:00.487274758 +0900
-+++ alpine-2.26.new/pico/pilot.c	2023-02-06 06:20:01.824086389 +0900
++++ alpine-2.26.new/pico/pilot.c	2023-02-09 01:25:28.713825879 +0900
 @@ -331,9 +331,10 @@ Loop:
  	  case 'f':			/* -f for function key use */
  	    gmode ^= MDFKEY;
@@ -154,4 +168,3 @@ diff -uprN alpine-2.26/pico/pilot.c alpine-2.26.new/pico/pilot.c
  
  	  /*
  	   * These do take arguments.
-
