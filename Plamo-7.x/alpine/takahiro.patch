@@ -118,8 +118,8 @@ diff -uprN alpine-2.26/alpine/keymenu.h alpine-2.26.new/alpine/keymenu.h
 -#define	JUMP_MENU	{"J", N_("Jump"), \
 -			 {MC_JUMP, 1, {'j'}}, \
 +// modified by takahiro
-+#define	JUMP_MENU	{"G", N_("Jump"), \
-+			 {MC_JUMP, 1, {'g'}}, \
++#define	JUMP_MENU	{"L", N_("Jump"), \
++			 {MC_JUMP, 1, {'l'}}, \
  			 KS_JUMPTOMSG}
  /* TRANSLATORS: Forward Email */
  #define	FWDEMAIL_MENU	{"F", N_("Fwd Email"), \
