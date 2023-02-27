@@ -30,16 +30,17 @@ if [ ! -d $W ]; then
 fi
 
 cd $W
-latest=$W/packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm
-edgedir=$W/packages.microsoft.com/yumrepos/edge/
+latest=$W/packages.microsoft.com/yumrepos/edge/Packages/m/microsoft-edge-$channel-*.rpm
+edgedir=$W/packages.microsoft.com/yumrepos/edge/Packages/m/
 
 rpmname_old=$(ls -art $latest |tail -n1)
+echo "rpmname_old=$rpmname_old"
 if [ $? != 0 ]; then
 	echo "no rpm file"
 	rpmname_old=""
 fi
 
-wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/Packages/m/
 
 rpmname=$(ls -art $latest |tail -n1)
 if [ $? != 0 ]; then
