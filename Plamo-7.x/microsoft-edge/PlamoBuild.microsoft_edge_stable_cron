@@ -33,7 +33,7 @@ cd $W
 
 rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 
-wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
 
 if [ -f $rpmname ]; then
 	# RPMファイルを取得したことがある
