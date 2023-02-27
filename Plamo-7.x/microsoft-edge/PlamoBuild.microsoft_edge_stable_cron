@@ -33,10 +33,10 @@ cd $W
 
 rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 
+wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+
 if [ -f $rpmname ]; then
 	# RPMファイルを取得したことがある
-	# 新しいRPMを取得
-	wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
 	rpmname_old=$rpmname
 	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 	if [ $rpmname = $rpmname_old ]; then
@@ -46,7 +46,6 @@ if [ -f $rpmname ]; then
 	fi
 else
 	# まだこのスクリプトを実行したことがない
-	wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
 	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 fi
 
@@ -55,11 +54,6 @@ if [ $? != 0 ]; then
 	echo "failed to convert rpm to tar."
 	exit 255
 fi
-
-#rpmnameback=$rpmname.back
-#mv $rpmname $rpmnameback
-#touch -r $rpmnameback $rpmname
-#rm -f $rpmnameback
 
 # 存在する全てのRPMファイルを0byteにする(0byteを越えているもののみにするべきか？）
 for i in *.rpm
