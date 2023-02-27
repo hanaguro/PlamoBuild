@@ -12,7 +12,14 @@ DOCS=''
 compatlibs=''
 patchfiles=''
 installdir='opt/google/chrome'
+workingdir='/var/chrome'
 ##############################################################
+
+if [ ! -d ${workingdir} ]; then
+	mkdir -p ${workingdir}
+fi
+
+cd ${workingdir}
 
 # if [ ! -f ${url##*/} ]; then
 #   wget $url
@@ -32,12 +39,21 @@ fi
 
 vers=`ls -l --time-style="+%Y%m%d%H%M%S" ${url##*/} | awk '{print $6}'`
 
+if [ "$arch" = "x86_64" ]; then
+    libdir=lib
+else
+    libdir=lib32
+fi
+
 if [ ! -d $src ]; then
       mkdir -p ./$src
 fi
 rm -rf $src/*
+#rpm2cpio ../${url##*/} | cpio -ivd
+rpm2tar ${url##*/} 
 cd $src
-rpm2cpio ../${url##*/} |xz -d| cpio -ivd
+tmp_f=${url##*/}
+tar xvf ../${tmp_f%.*}.tar 
 
 rm -rf etc
 
