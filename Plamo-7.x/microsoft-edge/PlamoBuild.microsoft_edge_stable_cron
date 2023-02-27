@@ -30,37 +30,39 @@ if [ ! -d $W ]; then
 fi
 
 cd $W
+latest=$W/packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm
+edgedir=$W/packages.microsoft.com/yumrepos/edge/
 
-rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
+rpmname_old=$(ls -art $latest |tail -n1)
+if [ $? != 0 ]; then
+	echo "no rpm file"
+	rpmname_old=""
+fi
 
 wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
 
-if [ -f $rpmname ]; then
+rpmname=$(ls -art $latest |tail -n1)
+if [ $? != 0 ]; then
+	echo "no rpm file after wget"
+	exit 1
+fi
+
+if [ "$rpmname_old" != "" ]; then
 	# RPMファイルを取得したことがある
-	rpmname_old=$rpmname
-	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
-	if [ $rpmname = $rpmname_old ]; then
+	name1=$(basename $rpmname_old)
+	name2=$(basename $rpmname)
+	if [ "$name1" == "$name2" ]; then
 		# wget実行前の最新と実行後の最新が同じ
 		echo "Edge is the latest version"
 		exit 0
 	fi
-else
-	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 fi
 
 rpm2tar $rpmname
 if [ $? != 0 ]; then
 	echo "failed to convert rpm to tar."
-	exit 255
+	exit 1
 fi
-
-# 存在する全てのRPMファイルを0byteにする(0byteを越えているもののみにするべきか？）
-for i in *.rpm
-do
-		mv $i $i.bak
-		touch -r $i.bak $i
-		rm -f $i.bak
-done
 
 vers=`ls -l --time-style="+%Y%m%d%H%M%S" $rpmname | awk '{print $6}'`
 
@@ -101,3 +103,14 @@ EOF
 rm -f ../$pkg.$compress
 rm -rf $W/*.tar
 rm -rf $W/work
+
+# 存在する全てのRPMファイルを0byteにする(0byteを越えているもののみにするべきか？）
+cd $edgedir
+for i in *.rpm
+do
+		mv $i $i.bak
+		touch -r $i.bak $i
+		rm -f $i.bak
+done
+
+
