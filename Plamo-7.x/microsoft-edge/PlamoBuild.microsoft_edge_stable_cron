@@ -4,7 +4,7 @@ export NO_STRIP=1
 pkgbase='microsoft_edge'
 #vers="91.0.864.33"
 #rel="1"
-channel="beta"
+channel="stable"
 #if [ -x /usr/bin/rpm ]; then
 #    vers=$(rpm -qpi microsoft-edge-dev-88.0.673.0-1.x86_64.rpm 2>/dev/null | egrep '^Version' | awk '{ print $3 }')
 #else
@@ -19,30 +19,35 @@ OPT_CONFIG=""
 DOCS=''
 patchfiles=''
 compress=txz
-workdir=$HOME/edge
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
 
-if [ ! -d $workdir ]; then
-	mkdir $workdir
+W=$HOME/edge
+
+if [ ! -d $W ]; then
+	mkdir $W
 fi
 
-cd $workdir
+cd $W
 
 rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 
 if [ -f $rpmname ]; then
+	# RPMファイルを取得したことがある
 	# 新しいRPMを取得
-	wget --timestamping -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+	wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
 	rpmname_old=$rpmname
 	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 	if [ $rpmname = $rpmname_old ]; then
+		# wget実行前の最新と実行後の最新が同じ
 		echo "Edge is the latest version"
 		exit 0
 	fi
 else
-	wget -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+	# まだこのスクリプトを実行したことがない
+	wget --timestamping -nc -r --no-parent -A "microsoft-edge-$channel-*.rpm" https://packages.microsoft.com/yumrepos/edge/
+	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 fi
 
 rpm2tar $rpmname
@@ -50,6 +55,19 @@ if [ $? != 0 ]; then
 	echo "failed to convert rpm to tar."
 	exit 255
 fi
+
+#rpmnameback=$rpmname.back
+#mv $rpmname $rpmnameback
+#touch -r $rpmnameback $rpmname
+#rm -f $rpmnameback
+
+# 存在する全てのRPMファイルを0byteにする(0byteを越えているもののみにするべきか？）
+for i in *.rpm
+do
+		mv $i $i.bak
+		touch -r $i.bak $i
+		rm -f $i.bak
+done
 
 vers=`ls -l --time-style="+%Y%m%d%H%M%S" $rpmname | awk '{print $6}'`
 
@@ -88,5 +106,5 @@ EOF
 /sbin/updatepkg -f ../$pkg.$compress
 
 rm -f ../$pkg.$compress
-rm -rf ../*.tar
-rm -rf ../work
+rm -rf $W/*.tar
+rm -rf $W/work
