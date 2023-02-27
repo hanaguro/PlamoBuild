@@ -44,6 +44,8 @@ if [ -f $rpmname ]; then
 		echo "Edge is the latest version"
 		exit 0
 	fi
+else
+	rpmname=$(ls -art packages.microsoft.com/yumrepos/edge/microsoft-edge-$channel-*.rpm |tail -n1)
 fi
 
 rpm2tar $rpmname
