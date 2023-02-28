@@ -1,0 +1,110 @@
+#!/bin/sh
+export NO_STRIP=1
+##############################################################
+pkgbase='microsoft_edge'
+#vers="91.0.864.33"
+#rel="1"
+channel="stable"
+#if [ -x /usr/bin/rpm ]; then
+#    vers=$(rpm -qpi microsoft-edge-dev-88.0.673.0-1.x86_64.rpm 2>/dev/null | egrep '^Version' | awk '{ print $3 }')
+#else
+#    vers=$release
+#fi
+#src="microsoft-edge-${vers}"
+#url="https://packages.microsoft.com/yumrepos/edge/microsoft-edge-${channel}-${vers}-${rel}.x86_64.rpm"
+verify=""
+arch=`uname -m`
+build=B1
+OPT_CONFIG=""
+DOCS=''
+patchfiles=''
+compress=tzst
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+W=$HOME/edge
+
+if [ ! -d $W ]; then
+	mkdir $W
+fi
+
+cd $W
+wget https://msedgedriver.azureedge.net/LATEST_STABLE
+if [ ! -e LATEST_STABLE ];then 
+		echo "not found LATEST_STABLE file"
+		exit 1
+fi
+
+latestver=$(iconv -f utf-16le -t utf-8 LATEST_STABLE|sed 's/[^0-9.]//g')
+rm -f LATEST_STABLE*
+
+if !(type microsoft-edge-stable > /dev/null 2>&1); then
+		# edgeがインストールされていない
+		getver=$latestver
+else
+		currentver=$(microsoft-edge-stable --version|awk '{print $3}')
+
+		echo "current version: "$currentver
+		echo "latest version: "$latestver
+
+		sorted=$(printf "%s\n" $latestver $currentver | sort -V)
+		getver=$(echo $sorted | awk '{print $2}')
+
+		if [ "$currentver" == "$getver" ]; then
+				echo "already latest version"
+				exit 0
+		fi
+fi
+
+echo "get version: " $getver
+rpmname="microsoft-edge-$channel-$getver-1.x86_64.rpm"
+echo "get file: "$rpmname
+
+wget https://packages.microsoft.com/yumrepos/edge/Packages/m/$rpmname
+
+rpm2tar $rpmname
+if [ $? != 0 ]; then
+	echo "failed to convert rpm to tar."
+	exit 1
+fi
+
+vers=`ls -l --time-style="+%Y%m%d%H%M%S" $rpmname | awk '{print $6}'`
+
+if [ -d $P ]; then
+	rm -rf $P
+fi
+mkdir -p $P
+tar xf $(basename $rpmname .rpm).tar -C $P
+
+rm -rf $P/etc
+rm -rf $P/usr/share/gnome-control-center
+
+cp $0 .
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+convert_links
+
+pkg=${pkgbase}_${channel}-${vers}-${arch}-${build}
+
+cd $P
+/sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+/sbin/updatepkg -f ../$pkg.$compress
+
+rm -f ../$pkg.$compress
+rm -rf $W/*.tar
+rm -rf $W/work
