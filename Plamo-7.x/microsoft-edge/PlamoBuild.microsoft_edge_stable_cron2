@@ -60,7 +60,12 @@ fi
 echo "get version: " $getver
 rpmname="microsoft-edge-$channel-$getver-1.x86_64.rpm"
 echo "get file: "$rpmname
-wget https://packages.microsoft.com/yumrepos/edge/Packages/m/$rpmname
+wget https://packages.microsoft.com/yumrepos/edge/$rpmname
+
+if [ ! -e $rpmname ]; then
+		# リポジトリが変った？
+		wget https://packages.microsoft.com/yumrepos/edge/Packages/m/$rpmname
+fi
 
 rpm2tar $rpmname
 if [ $? != 0 ]; then
