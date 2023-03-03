@@ -77,8 +77,10 @@ fi
 mkdir -p $P
 tar xf $(basename $rpmname .rpm).tar -C $P
 
-rm -rf $P/etc
-rm -rf $P/usr/share/gnome-control-center
+if [ -d $P ];then
+	rm -rf $P/etc
+	rm -rf $P/usr/share/gnome-control-center
+fi
 
 cp $0 .
 
