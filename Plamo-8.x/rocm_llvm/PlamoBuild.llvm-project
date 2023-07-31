@@ -1,0 +1,138 @@
+#!/bin/sh
+##############################################################
+pkgbase="rocm_llvm"
+vers="$(date +%Y%m%d)"
+url="https://github.com/ROCm-Developer-Tools/llvm-project.git"
+verify=""
+digest=""
+arch=`uname -m`
+build=B1
+src="llvm-project"
+OPT_CONFIG="-DCMAKE_BUILD_TYPE=Release
+	-DCMAKE_INSTALL_PREFIX='/opt/rocm/llvm' 
+	-DLLVM_ENABLE_PROJECTS='llvm;clang;compiler-rt;lld' 
+	-DLLVM_TARGETS_TO_BUILD='AMDGPU;X86' 
+	-DCLANG_DEFAULT_LINKER=lld 
+	-DLLVM_ENABLE_LIBCXX=ON  
+	-DLLVM_INSTALL_UTILS=ON 
+	-DLLVM_ENABLE_BINDINGS=OFF 
+	-DLLVM_LINK_LLVM_DYLIB=OFF 
+	-DLLVM_BUILD_LLVM_DYLIB=OFF 
+	-DLLVM_LINK_LLVM_DYLIB=OFF 
+	-DLLVM_ENABLE_ASSERTIONS=ON 
+	-DOCAMLFIND=NO 
+	-DLLVM_ENABLE_OCAMLDOC=OFF 
+	-DLLVM_INCLUDE_BENCHMARKS=OFF 
+	-DLLVM_BUILD_TESTS=ON 
+	-DLLVM_INCLUDE_TESTS=ON 
+	-DCLANG_INCLUDE_TESTS=ON 
+	-DLLVM_BINUTILS_INCDIR=/usr/include
+"
+DOCS="LICENSE.TXT README.md"
+patchfiles=""
+# specifies files that are not in source archive and patchfiles
+addfiles=""
+compress=tzst
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+B=$W/build
+S=$W/$src/llvm
+
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build)
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+    download_sources
+fi
+
+
+if [ $opt_config -eq 1 ] ; then
+
+    for f in $addfiles $patchfiles
+    do
+        if [ ! -f $f ]; then
+            echo "Required file ($f) is missing."
+            exit 255
+        fi
+    done
+
+######################################################################
+#  out of tree build. patch apply in src dir
+######################################################################
+    if [ -d $B ] ; then rm -rf $B ; fi ; mkdir -p $B 
+    cd $S
+    for patch in $patchfiles ; do
+        if [ ! -f .${patch} ]; then
+            patch -p1 < $W/$patch
+            touch .${patch}
+        fi
+    done
+    # if [ -f autogen.sh ] ; then
+    #   sh ./autogen.sh
+    # fi
+    cd $B
+    export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
+    export LDFLAGS='-Wl,--as-needed' 
+    cmake -G Ninja -DCMAKE_INSTALL_PREFIX:PATH=/usr ${OPT_CONFIG} $S  
+    if [ $? != 0 ]; then
+        echo "configure error. $0 script stop"
+        exit 255
+    fi
+fi
+
+if [ $opt_build -eq 1 ] ; then
+    cd $B 
+    ninja -j16
+    if [ $? != 0 ]; then
+        echo "build error. $0 script stop"
+        exit 255
+    fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B
+
+  DESTDIR=$P ninja install
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man,
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
