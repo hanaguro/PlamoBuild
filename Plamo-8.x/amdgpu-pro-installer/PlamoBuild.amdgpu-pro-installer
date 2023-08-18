@@ -64,6 +64,9 @@ if [ $opt_download -eq 1 ] ; then
     wget -nc https://repo.radeon.com/amdgpu/${repo_folder_ver}/ubuntu/pool/proprietary/o/oglp-amdgpu-pro/libgles2-amdgpu-pro-oglp_${major_short}-${minor}.${ubuntu_ver}_amd64.deb
     wget -nc https://repo.radeon.com/amdgpu/${repo_folder_ver}/ubuntu/pool/proprietary/v/vulkan-amdgpu-pro/vulkan-amdgpu-pro_${major_short}-${minor}.${ubuntu_ver}_i386.deb
     wget -nc https://repo.radeon.com/amdgpu/${repo_folder_ver}/ubuntu/pool/proprietary/v/vulkan-amdgpu-pro/vulkan-amdgpu-pro_${major_short}-${minor}.${ubuntu_ver}_amd64.deb
+
+	sed -i -E "s/#\s+export LIBGL_DRIVERS_PATH/    export LIBGL_DRIVERS_PATH/" progl
+
 fi
 
 if [ $opt_config -eq 1 ] ; then
@@ -141,8 +144,8 @@ if [ $opt_package -eq 1 ] ; then
 
 	mv "$P"/opt/amdgpu-pro/lib/x86_64-linux-gnu/ "$P"/usr/lib/amdgpu-pro/
     mv "$P"/opt/amdgpu-pro/lib/i386-linux-gnu/ "$P"/usr/lib32/amdgpu-pro/
-#	mv "$P"/opt/amdgpu/lib/x86_64-linux-gnu/* "$P"/usr/lib/
-#    mv "$P"/opt/amdgpu/lib/i386-linux-gnu/* "$P"/usr/lib32/
+	mv "$P"/opt/amdgpu/lib/x86_64-linux-gnu/* "$P"/usr/lib/
+    mv "$P"/opt/amdgpu/lib/i386-linux-gnu/* "$P"/usr/lib32/
 #   mv "$P"/usr/lib/x86_64-linux-gnu/* "$P"/usr/lib/
 #    mv "$P"/usr/lib/i386-linux-gnu/* "$P"/usr/lib32/
 #	rm $P/usr/lib/i386-linux-gnu/dri/amdgpu_dri.so
