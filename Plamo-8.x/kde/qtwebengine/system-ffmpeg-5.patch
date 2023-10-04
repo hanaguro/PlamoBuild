@@ -1,0 +1,106 @@
+Based on: https://codereview.qt-project.org/c/qt/qtwebengine-chromium/+/427771
+Gentoo Bug: https://bugs.gentoo.org/831487
+
+--- a/src/3rdparty/chromium/media/filters/ffmpeg_demuxer.h	2021-10-16 23:46:55.000000000 +0300
++++ b/src/3rdparty/chromium/media/filters/ffmpeg_demuxer.h	2023-01-23 17:34:49.122859630 +0200
+@@ -145,6 +145,8 @@
+   base::TimeDelta start_time() const { return start_time_; }
+   void set_start_time(base::TimeDelta time) { start_time_ = time; }
+ 
++  int64_t first_dts() const { return first_dts_; }
++
+  private:
+   friend class FFmpegDemuxerTest;
+ 
+@@ -202,6 +204,7 @@
+   bool fixup_chained_ogg_;
+ 
+   int num_discarded_packet_warnings_;
++  int64_t first_dts_;
+   int64_t last_packet_pos_;
+   int64_t last_packet_dts_;
+ 
+--- a/src/3rdparty/chromium/media/filters/ffmpeg_demuxer.cc	2023-01-23 17:33:57.366213805 +0200
++++ b/src/3rdparty/chromium/media/filters/ffmpeg_demuxer.cc	2023-01-23 17:43:09.283436983 +0200
+@@ -57,6 +57,8 @@
+ 
+ namespace {
+ 
++constexpr int64_t kRelativeTsBase = static_cast<int64_t>(0x7ffeffffffffffff);
++
+ void SetAVStreamDiscard(AVStream* stream, AVDiscard discard) {
+   DCHECK(stream);
+   stream->discard = discard;
+@@ -88,7 +90,7 @@
+       frames * base::Time::kMicrosecondsPerSecond / sample_rate);
+ }
+ 
+-static base::TimeDelta ExtractStartTime(AVStream* stream) {
++static base::TimeDelta ExtractStartTime(AVStream* stream, int64_t first_dts) {
+   // The default start time is zero.
+   base::TimeDelta start_time;
+ 
+@@ -98,12 +100,12 @@
+ 
+   // Next try to use the first DTS value, for codecs where we know PTS == DTS
+   // (excludes all H26x codecs). The start time must be returned in PTS.
+-  if (av_stream_get_first_dts(stream) != kNoFFmpegTimestamp &&
++  if (first_dts != AV_NOPTS_VALUE &&
+       stream->codecpar->codec_id != AV_CODEC_ID_HEVC &&
+       stream->codecpar->codec_id != AV_CODEC_ID_H264 &&
+       stream->codecpar->codec_id != AV_CODEC_ID_MPEG4) {
+     const base::TimeDelta first_pts =
+-        ConvertFromTimeBase(stream->time_base, av_stream_get_first_dts(stream));
++        ConvertFromTimeBase(stream->time_base, first_dts);
+     if (first_pts < start_time)
+       start_time = first_pts;
+   }
+@@ -287,6 +289,7 @@
+       fixup_negative_timestamps_(false),
+       fixup_chained_ogg_(false),
+       num_discarded_packet_warnings_(0),
++      first_dts_(AV_NOPTS_VALUE),
+       last_packet_pos_(AV_NOPTS_VALUE),
+       last_packet_dts_(AV_NOPTS_VALUE) {
+   DCHECK(demuxer_);
+@@ -353,6 +356,11 @@
+   int64_t packet_dts =
+       packet->dts == AV_NOPTS_VALUE ? packet->pts : packet->dts;
+ 
++  if (first_dts_ == AV_NOPTS_VALUE && packet->dts != AV_NOPTS_VALUE &&
++      last_packet_dts_ != AV_NOPTS_VALUE) {
++    first_dts_ = packet->dts - (last_packet_dts_ + kRelativeTsBase);
++  }
++
+   // Chained ogg files have non-monotonically increasing position and time stamp
+   // values, which prevents us from using them to determine if a packet should
+   // be dropped. Since chained ogg is only allowed on single track audio only
+@@ -1430,7 +1438,7 @@
+ 
+     max_duration = std::max(max_duration, streams_[i]->duration());
+ 
+-    base::TimeDelta start_time = ExtractStartTime(stream);
++    base::TimeDelta start_time = ExtractStartTime(stream, streams_[i]->first_dts());
+ 
+     // Note: This value is used for seeking, so we must take the true value and
+     // not the one possibly clamped to zero below.
+@@ -1587,6 +1595,8 @@
+   for (const auto& stream : streams_) {
+     if (!stream || stream->IsEnabled() != enabled)
+       continue;
++    if (stream->first_dts() == AV_NOPTS_VALUE)
++      continue;
+     if (!lowest_start_time_stream ||
+         stream->start_time() < lowest_start_time_stream->start_time()) {
+       lowest_start_time_stream = stream.get();
+@@ -1604,6 +1614,10 @@
+     if (stream && stream->type() == DemuxerStream::VIDEO &&
+         stream->IsEnabled()) {
+       video_stream = stream.get();
++
++      if (stream->first_dts() == AV_NOPTS_VALUE)
++        continue;
++
+       if (video_stream->start_time() <= seek_time) {
+         return video_stream;
+       }

@@ -13,8 +13,8 @@ build=B1
 src="qtwebengine"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS=".QT-ENTERPRISE-LICENSE-AGREEMENT LICENSE.Chromium LICENSE.FDL LICENSE.GPL2 LICENSE.GPL3 LICENSE.GPL3-EXCEPT LICENSE.GPLv3 LICENSE.LGPL3 LICENSE.LGPLv3 config_help.txt"
-#patchfiles=" qt5-webengine-chromium-python3.patch qt5-webengine-pipewire-0.3.patch qt5-webengine-ffmpeg5.patch qt5-webengine-python3.patch "
-patchfiles=" qt5-webengine-chromium-python3.patch qt5-webengine-pipewire-0.3.patch qt5-webengine-python3.patch "
+patchfiles=" qt5-webengine-chromium-python3.patch qt5-webengine-pipewire-0.3.patch qt5-webengine-ffmpeg5.patch qt5-webengine-python3.patch system-ffmpeg-5.patch"
+#patchfiles=" qt5-webengine-chromium-python3.patch qt5-webengine-pipewire-0.3.patch qt5-webengine-python3.patch "
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=tzst
@@ -96,8 +96,8 @@ if [ $opt_config -eq 1 ] ; then
     export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
     export LDFLAGS='-Wl,--as-needed' 
 #    ./configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
-#    qmake . -- -proprietary-codecs -system-ffmpeg -webp -spellchecker -webengine-icu -webengine-kerberos -webengine-webrtc-pipewire
-    qmake .
+    qmake . -- -proprietary-codecs -system-ffmpeg -webp -spellchecker -webengine-icu -webengine-kerberos -webengine-webrtc-pipewire
+#    qmake .
     if [ $? != 0 ]; then
         echo "configure error. $0 script stop"
         exit 255
