@@ -1,0 +1,170 @@
+#!/bin/sh
+##############################################################
+pkgbase="dmd"
+vers="2.105.2"
+commitid=$vers
+url="http://github.com/D-Programming-Language/dmd.git"
+#url2="http://github.com/D-Programming-Language/druntime.git"
+url3="http://github.com/D-Programming-Language/phobos.git"
+verify=""
+digest=""
+arch=`uname -m`
+build=B1
+src="dmd"
+OPT_CONFIG="--disable-static --enable-shared"
+DOCS="LICENSE.txt README.md changelog"
+patchfiles=""
+# specifies files that are not in source archive and patchfiles
+addfiles=""
+compress=tzst
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build)
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+    download_sources
+
+#    cd $W
+#    git clone $url2
+#    cd $(basename ${url2##*/} .git)
+#    git checkout -b build $commitid
+
+    cd $W
+    git clone $url3
+    cd $(basename ${url3##*/} .git)
+    git checkout -b build $commitid
+
+fi
+
+if [ $opt_config -eq 1 ] ; then
+
+    for f in $addfiles $patchfiles
+    do
+        if [ ! -f $f ]; then
+            echo "Required file ($f) is missing."
+            exit 255
+        fi
+    done
+
+######################################################################
+#  source copy build. patch apply in build dir
+######################################################################
+#    if [ -d $B ] ; then rm -rf $B ; fi ;  cp -a $S $B  
+    cd $S
+    for patch in $patchfiles ; do
+       patch -p1 < $W/$patch
+    done
+    # if [ -f autogen.sh ] ; then
+    #   sh ./autogen.sh
+    # fi
+
+    export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
+    export LDFLAGS='-Wl,--as-needed' 
+#    ./configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
+#    if [ $? != 0 ]; then
+#        echo "configure error. $0 script stop"
+#        exit 255
+#    fi
+fi
+
+if [ $opt_build -eq 1 ] ; then
+#    export DFLAGS="-link-defaultlib-shared=false $(echo -ne $LDFLAGS | cut -d\" -f2 | tail -c+4 | sed -e "s/,/ -L=/g" -e "s/-flto=auto/--flto=full/")"
+#    export HOST_DMD=ldmd2
+#
+#    cd $W/dmd
+#    GENERATED="$W"/dmd/generated
+#    mkdir generated
+#    $HOST_DMD -ofgenerated/build -g compiler/src/build.d -release -O
+#    generated/build BUILD=release HOST_DMD="$HOST_DMD" CXX="c++" ENABLE_RELEASE=1 DFLAGS="$DFLAGS" dmd -v $MAKEFLAGS
+    cd $W/dmd/src
+    make -f posix.mak AUTO_BOOTSTRAP=1 MODEL=64 RELEASE=1
+    if [ $? != 0 ]; then
+        echo "build error. $0 script stop"
+        exit 255
+    fi
+
+    cd $W/dmd/druntime
+ #   make -f posix.mak DMD=$W/dmd/compiler/generated/host_dmd-2.095.0/dmd2/linux/bin64/dmd BUILD=release ENABLE_RELEASE=1 PIC=1
+    make -f posix.mak BUILD=release ENABLE_RELEASE=1 PIC=1
+    if [ $? != 0 ]; then
+        echo "build error. $0 script stop"
+        exit 255
+    fi
+
+    cd $W/phobos
+#   make -f posix.mak DMD=$GENERATED/linux/release/*/dmd BUILD=release ENABLE_RELEASE=1 PIC=1
+    make -f posix.mak BUILD=release ENABLE_RELEASE=1 PIC=1
+    if [ $? != 0 ]; then
+        echo "build error. $0 script stop"
+        exit 255
+    fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+
+  export LDFLAGS='-Wl,--as-needed'
+
+  cd $W/dmd
+  install -Dm755 "$W"/dmd/generated/linux/release/*/dmd "$P"/usr/bin/dmd
+  mkdir $P/etc
+  install -Dm644 "$W"/dmd.conf "$P"/etc/dmd.conf
+
+  install -Dm644 LICENSE.txt "$P"/usr/share/licenses/dmd/LICENSE
+
+
+  mkdir -p "$P"/usr/lib
+  cp -P $(find "$W"/dmd/generated/linux/release/*/ \( -iname "*.a" -a \! -iname "*.so.a" \) -o \( -iname "*.so*" -a \! -iname "*.o" -a \! -iname "*.a" \) ) "$P"/usr/lib
+  cp -P $(find "$W"/phobos/generated/linux/release/ \( -iname "*.a" -a \! -iname "*.so.a" \) -o \( -iname "*.so*" -a \! -iname "*.o" -a \! -iname "*.a" \) ) "$P"/usr/lib
+  
+  mkdir -p "$P"/usr/include/dlang/dmd
+  cp -r "$W"/phobos/{*.d,etc,std} "$P"/usr/include/dlang/dmd
+  cp -r "$W"/dmd/druntime/import/* "$P"/usr/include/dlang/dmd/
+
+  find "$P"/usr -type f | xargs chmod 0644
+  chmod 755 "$P"/usr/bin/*
+
+  install -Dm644 "$W"/dmd/LICENSE.txt "$P"/usr/share/licenses/dmd/LICENSE-druntime
+  install -Dm644 "$W"/phobos/LICENSE_1_0.txt "$P"/usr/share/licenses/dmd/LICENSE
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man,
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
