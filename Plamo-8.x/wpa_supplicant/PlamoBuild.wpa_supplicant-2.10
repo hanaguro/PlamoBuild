@@ -1,0 +1,174 @@
+#!/bin/sh
+##############################################################
+pkgbase='wpa_supplicant'
+vers='2.10'
+url="https://w1.fi/releases/${pkgbase}-${vers}.tar.gz"
+verify="${url}.asc"
+arch=`uname -m`
+build=B2
+src="${pkgbase}-${vers}"
+OPT_CONFIG=''
+DOCS='COPYING README'
+blfspatch=""
+# https://w1.fi/security/2019-7/ap-mode-pmf-disconnection-protection-bypass.txt
+patchfiles="
+	wpa_supplicant_tls.patch
+        wpa_supplicant_dbus_service_syslog.patch
+	wpa_supplicant_service_ignore-on-isolate.patch
+	wpa_supplicant-legacy-server-connect.patch
+	lower_security_level_for_tls_1.patch
+	disable-eapol-werror.patch
+	0001-nl80211-add-extra-ies-only-if-allowed-by-driver.patch
+	0002-AP-guard-FT-SAE-code-with-CONFIG_IEEE80211R_AP.patch
+"
+addfiles="config ifconfig_wlan0-sample wpa.service"
+compress=tzst
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build{,32})
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+  download_sources
+  if [ ! -f ${blfspatch##*/} ]; then
+    wget $blfspatch
+  fi
+fi
+
+if [ $opt_config -eq 1 ] ; then
+
+  for f in $addfiles $patchfiles
+  do
+    if [ ! -f $f ]; then
+      echo "Required file ($f) is missing."
+      exit 255
+    fi
+  done
+
+  if [ -d $B ] ; then rm -rf $B ; fi ; cp -a $S $B
+######################################################################
+#  don't copy sources, so need patch in the src dir
+######################################################################
+  cd $B
+  for patch in $patchfiles ; do
+    patch -p1 < $W/$patch
+  done
+  cp $W/config $B/wpa_supplicant/.config
+fi
+    
+if [ $opt_build -eq 1 ] ; then
+  cd $B/wpa_supplicant
+  export LDFLAGS='-Wl,--as-needed'
+  make BINDIR=/sbin LIBDIR=/${libdir}
+  make BINDIR=/usr/bin LIBDIR=/${libdir} eapol_test
+  if [ $? != 0 ]; then
+    echo "build error. $0 script stop"
+    exit 255
+  fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B/wpa_supplicant
+  export LDFLAGS='-Wl,--as-needed'
+  make LIBDIR=/${libdir} BINDIR=/sbin DESTDIR=$P install
+  install -v -Dm755 eapol_test $P/usr/bin/eapol_test
+
+  install -v -Dm644 doc/docbook/wpa_supplicant.conf.5 $P/usr/share/man/man5/
+  install -v -Dm644 doc/docbook/wpa_{cli,passphrase,supplicant}.8 $P/usr/share/man/man8/
+
+  install -v -Dm644 $W/config $docdir/$src/config
+  install -v -Dm755 $W/wpa.service $P/lib/services/wpa
+  install -v -Dm755 $W/wpa.service $docdir/$src/wpa.service
+
+  install -v -Dm644 $W/ifconfig_wlan0-sample $P/etc/sysconfig/ifconfig_wlan0-sample
+  install -v -Dm644 $W/ifconfig_wlan0-sample $docdir/$src/ifconfig_wlan0-sample
+  install -v -Dm655 $W/wpa_supplicant.conf $P/etc/dbus-1/system.d/wpa_supplicant.conf
+  install -v -Dm600 $W/wpa_supplicant_conf $P/etc/wpa_supplicant/wpa_supplicant.conf
+  install -v -Dm644 $W/70-wifi.rules $P/etc/udev/rules.d/70-wifi.rules
+
+  install -dm755 -v $P/etc/rc.d/init.d
+cat <<"EOF" > $P/etc/rc.d/init.d/wpa_supplicant
+#!/bin/sh
+. /lib/lsb/init-functions
+
+case "$1" in
+   start)
+      log_info_msg "Starting wpa_supplicant..."
+      /sbin/wpa_supplicant -B -D nl80211 -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf -u
+      evaluate_retval
+      ;;
+
+   stop)
+      log_info_msg "Stopping wpa_supplicant..."
+      killall wpa_supplicant
+      evaluate_retval
+      ;;
+
+   restart)
+      $0 stop
+      sleep 1
+      $0 start
+      ;;
+   *)
+      echo "Usage: $0 {start|stop|restart}"
+      exit 1
+      ;;
+esac
+
+# End /etc/init.d/wpa_supplicant
+EOF
+
+  chmod +x $P/etc/rc.d/init.d/wpa_supplicant
+
+  for i in $(seq 0 6)
+  do
+      install -dm755 -v $P/etc/rc.d/rc"$i".d
+      case $i in
+          0|1|2|6) ln -sf ../init.d/wpa_supplicant $P/etc/rc.d/rc"$i".d/K79wpa_supplicant ;;
+          3|4|5)   ln -sf ../init.d/wpa_supplicant $P/etc/rc.d/rc"$i".d/S30wpa_supplicant ;;
+      esac
+  done
+
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man, 
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and 
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
