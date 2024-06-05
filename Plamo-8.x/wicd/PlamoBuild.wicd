@@ -2,36 +2,15 @@
 ##############################################################
 pkgbase="wicd"
 vers="1.7.4"
-#url="https://launchpad.net/${pkgbase}/1.7/${vers}/+download/${pkgbase}-${vers}.tar.gz"
-url="http://deb.debian.org/debian/pool/main/w/wicd/wicd_1.7.4+tb2+2019.09.18git2e0ba579.orig.tar.gz"
+url="https://github.com/hanaguro/wicd.git"
 verify=""
 digest=""
 arch=`uname -m`
 build=B1
-src="wicd-1.7.4"
+src="wicd"
 OPT_CONFIG=""
 DOCS="AUTHORS INSTALL LICENSE NEWS README"
-patchfiles="
-wicd-1.7.4-plamo.patch
-03-import-wpath.patch
-04-bytes-vs-strings-in-setup.py.patch
-26-support_etc-network_scripts.patch
-32-prefer_pkexec.patch
-34-newer_urwid
-35-fix_ValueError_None_is_not_in_list.patch
-36-fix_wrongly_displayed_keybinding.patch
-37-fix_IndexError_list_index_out_of_range.patch
-38-fix_typo_for_pedantic_wpa_supplicant_2.6.patch
-39-add_wpa-peap_without_domain.patch
-40-initialize_wicd-gtk_wifi-on-off-button.patch
-41-fix_wicd-manager-settings.conf_5_man_page_wrt_wired_connect_mode.patch
-42-fix_documentation_wrt_generated_dhclient.conf.patch
-43-fix-wrong-Galician-translation.patch
-44-fix_wicd-curses_AttributeError_in_keypress-function.patch
-45-update_systemd_service_file.patch
-46-dhcpcd_is_now_dhcpcd5.patch
-47-fix-833929-no-autoconnect-when-GUI-is-open.patch
-"
+patchfiles=""
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=tzst
@@ -87,17 +66,8 @@ if [ $opt_config -eq 1 ] ; then
 
     export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
     export LDFLAGS='-Wl,--as-needed' 
-#    python setup.py config    
-    python3 setup.py configure \
-                --no-install-acpi \
-                --no-install-docs \
-                --no-install-gnome-shell-extensions \
-                --lib=/usr/share/wicd \
-                --share=/usr/share/wicd \
-                --wicdgroup=netdev \
-                --loggroup=adm \
-                --logperms=0640
-	python3 setup.py compile_translations
+    python setup.py configure --resume=/usr/share/wicd/scripts/ --suspend=/usr/share/wicd/scripts/ --verbose --python=/usr/bin/python --lib=/usr/lib --sbin=/usr/bin --no-install-init --no-install-gnome-shell-extensions
+
     if [ $? != 0 ]; then
         echo "configure error. $0 script stop"
         exit 255
@@ -119,6 +89,26 @@ if [ $opt_package -eq 1 ] ; then
   cd $B
 
   python setup.py install --root $P --prefix=/usr
+
+  mkdir -p $P/etc/rc.d/init.d
+  cp $B/in/init\=plamo\=wicd.in $P/etc/rc.d/init.d/wicd
+
+  for i in `seq 0 6` ; do
+      mkdir -p $P/etc/rc.d/rc$i.d
+  done
+  ( cd $P/etc/rc.d/rc0.d ; ln -sf ../init.d/wicd K80wicd )
+  ( cd $P/etc/rc.d/rc1.d ; ln -sf ../init.d/wicd K80wicd )
+  ( cd $P/etc/rc.d/rc2.d ; ln -sf ../init.d/wicd K80wicd )
+  ( cd $P/etc/rc.d/rc3.d ; ln -sf ../init.d/wicd S40wicd )
+  ( cd $P/etc/rc.d/rc4.d ; ln -sf ../init.d/wicd S40wicd )
+  ( cd $P/etc/rc.d/rc5.d ; ln -sf ../init.d/wicd S40wicd )
+  ( cd $P/etc/rc.d/rc6.d ; ln -sf ../init.d/wicd K80wicd )
+
+  # don't need systemd config
+  #   stays at $P/lib/systemd/system/wicd.service
+  rm -rf $P/lib
+
+
 ################################
 #      install tweaks
 #  strip binaries, delete locale except ja, compress man,
