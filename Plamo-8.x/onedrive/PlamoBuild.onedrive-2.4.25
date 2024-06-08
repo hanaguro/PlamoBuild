@@ -8,7 +8,7 @@ digest=""
 arch=`uname -m`
 build=B1
 src="onedrive-${vers}"
-OPT_CONFIG="-enable-notifications --enable-completions --with-bash-completion-dir=/usr/share/bash-completion/completions --with-zsh-completion-dir=/usr/share/zsh/site-functions --with-fish-completion-dir=/usr/share/fish"
+OPT_CONFIG="-enable-notifications --enable-completions --with-bash-completion-dir=/usr/share/bash-completion/completions --with-zsh-completion-dir=/usr/share/zsh/site-functions --with-fish-completion-dir=/usr/share/fish/completions"
 DOCS="CHANGELOG.md LICENSE README.md docs"
 patchfiles=""
 # specifies files that are not in source archive and patchfiles
@@ -76,7 +76,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
-    make -j16
+    make -j3
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
         exit 255
@@ -90,49 +90,6 @@ if [ $opt_package -eq 1 ] ; then
 
   export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
-
-#  install -dm755 -v $P/etc/rc.d/init.d
-#cat <<"EOF" > $P/etc/rc.d/init.d/onedrive
-##!/bin/sh
-#. /lib/lsb/init-functions
-#
-#case "$1" in
-#   start)
-#      log_info_msg "Starting onedrive server..."
-#      su - takahiro -c '/usr/bin/onedrive --monitor --verbose --enable-logging &> /dev/null ' &
-#      evaluate_retval
-#      ;;
-#
-#   stop)
-#      log_info_msg "Stopping onedrive server..."
-#      killall onedrive
-#      evaluate_retval
-#      ;;
-#
-#   restart)
-#      $0 stop
-#      sleep 1
-#      $0 start
-#      ;;
-#   *)
-#      echo "Usage: $0 {start|stop|restart}"
-#      exit 1
-#      ;;
-#esac
-#
-## End /etc/init.d/onedrive
-#EOF
-#
-#  chmod +x $P/etc/rc.d/init.d/onedrive
-#
-#  for i in $(seq 0 6)
-#  do
-#      install -dm755 -v $P/etc/rc.d/rc"$i".d
-#      case $i in
-#          0|1|2|6) ln -sf ../init.d/onedrive $P/etc/rc.d/rc"$i".d/K00onedrive ;;
-#          3|4|5)   ln -sf ../init.d/onedrive $P/etc/rc.d/rc"$i".d/S99onedrive ;;
-#      esac
-#  done
 
 ################################
 #      install tweaks
