@@ -1,15 +1,15 @@
 #!/bin/sh
 ##############################################################
-pkgbase="rabbit"
-vers="3.0.3"
-url="https://github.com/rabbit-shocker/rabbit/archive/refs/tags/3.0.3.tar.gz"
+pkgbase="ruby_gdk_pixbuf2"
+vers="4.2.2"
+url="https://rubygems.org/downloads/gdk_pixbuf2-$vers.gem"
 verify=""
 digest=""
-arch="noarch"
+arch=`uname -m`
 build=B1
-src="rabbit-3.0.3"
+src="gdk_pixbuf2"
 OPT_CONFIG="--disable-static --enable-shared"
-DOCS="COPYING README.md TODO doc"
+DOCS=""
 patchfiles=""
 # specifies files that are not in source archive and patchfiles
 addfiles=""
@@ -40,6 +40,10 @@ else
 fi
 if [ $opt_download -eq 1 ] ; then
     download_sources
+    if [ ! -d $S ];then
+        mkdir $S
+    fi
+    mv gdk_pixbuf2-$vers.gem $S/
 fi
 
 if [ $opt_config -eq 1 ] ; then
@@ -77,11 +81,10 @@ if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
 #    make -j3
-    gem build rabbit.gemspec
-    if [ $? != 0 ]; then
-        echo "build error. $0 script stop"
-        exit 255
-    fi
+#    if [ $? != 0 ]; then
+#        echo "build error. $0 script stop"
+#        exit 255
+#    fi
 fi
 
 if [ $opt_package -eq 1 ] ; then
@@ -89,9 +92,10 @@ if [ $opt_package -eq 1 ] ; then
   if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
   cd $B
 
-  export LDFLAGS='-Wl,--as-needed'
+#  export LDFLAGS='-Wl,--as-needed'
 #  make install DESTDIR=$P
-gem install --verbose --ignore-dependencies --no-user-install --install-dir "$P/$(gem env gemdir)" --bindir "$P/usr/bin" "${pkgbase}-${vers}.gem"
+  gem install --verbose --ignore-dependencies --no-user-install --no-document -i "$P/$(ruby -e'puts Gem.default_dir')" -n "$P/usr/bin" gdk_pixbuf2-$vers.gem
+
 
 ################################
 #      install tweaks
