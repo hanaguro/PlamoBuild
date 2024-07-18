@@ -9,18 +9,46 @@ arch=`uname -m`
 build=B1
 src="cyrus-sasl-2.1.28"
 OPT_CONFIG="--disable-static --enable-shared
---with-gss_impl=mit
 --disable-krb4
---disable-sample
+--disable-macos-framework
+--disable-otp
+--disable-passdss
+--disable-srp
+--disable-srp-setpass
+--disable-static
+--enable-alwaystrue
+--enable-anon
+--enable-auth-sasldb
+--enable-checkapop
+--enable-cram
+--enable-digest
+--enable-gssapi
+--enable-login
+--enable-ntlm
+--enable-plain
+--enable-shared
+--enable-sql
+--sbin=/usr/bin
+--with-dblib=gdbm
+--with-devrandom=/dev/urandom
+--with-configdir=/etc/sasl2:/etc/sasl:/usr/lib/sasl2
+--with-ldap
+--with-mysql=no
+--with-pgsql=no
+--with-pam
+--with-saslauthd=/run/saslauthd
+--with-sqlite3=/usr/lib
 "
 DOCS="AUTHORS COPYING ChangeLog INSTALL.TXT README doc docsrc"
-patchfiles=""
+patchfiles="time.patch"
 # specifies files that are not in source archive and patchfiles
 addfiles=""
 compress=tzst
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
+
+export CPPFLAGS="-DHAVE_TIME_H"
 
 # このスクリプトで使う1文字変数の意味
 #
@@ -83,7 +111,7 @@ fi
 
 if [ $opt_build -eq 1 ] ; then
     cd $B 
-    export LDFLAGS='-Wl,--as-needed' 
+    export LDFLAGS='-Wl,--as-needed'
     make -j3
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
@@ -96,7 +124,7 @@ if [ $opt_package -eq 1 ] ; then
   if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
   cd $B
 
-  export LDFLAGS='-Wl,--as-needed' 
+  export LDFLAGS='-Wl,--as-needed'
   make install DESTDIR=$P
 
 ################################
