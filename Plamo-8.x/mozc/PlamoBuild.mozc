@@ -12,7 +12,7 @@ src="mozc"
 url2="https://github.com/e-kato/macuim.git"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS=""
-patchfiles="mozc.patch bazel.patch"
+patchfiles="mozc.patch bazel.patch gen_zip_code_seed.patch"
 # specifies files that are not in source archive and patchfiles
 addfiles="BUILD.bazel"
 compress=tzst
@@ -125,6 +125,9 @@ if [ $opt_download -eq 1 ] ; then
     cd $W
     wget --timestamping https://dumps.wikimedia.org/jawiki/20240701/jawiki-20240701-all-titles-in-ns0.gz
 
+    wget --timestamping https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip
+    wget --timestamping https://www.post.japanpost.jp/zipcode/dl/oogaki/zip/ken_all.zip
+
     set +e
 fi
 
@@ -141,10 +144,10 @@ if [ $opt_config -eq 1 ] ; then
     set -e
     cd $W/merge-ut-dictionaries/src/
 
-    # Use our local copy of the Mozc repo
+    echo "Use our local copy of the Mozc repo"
     sed -i -e "s|https://raw.githubusercontent.com/google/mozc/master/src|file://$S/src|" remove_duplicate_ut_entries.py
 
-    # Use a dated snapshot for the JAWiki dump data
+    echo "Use a dated snapshot for the JAWiki dump data"
     sed -i -e '/wget/d' count_word_hits.py
     sed -i -e "s|filename = \"jawiki-|filename = \"$W/jawiki-|g" count_word_hits.py
     sed -i -e 's|jawiki-[a-z0-9]\{6,8\}|jawiki-20240701|g' count_word_hits.py apply_word_hits.py
@@ -172,22 +175,34 @@ if [ $opt_config -eq 1 ] ; then
     python count_word_hits.py
     python apply_word_hits.py mozcdic-ut.txt
 
-    # Append the UT dictionary
-    cat mozcdic-ut.txt >> $S/src/data/dictionary_oss/dictionary00.txt
-
-    set +e
-
 ######################################################################
 #  source copy build. patch apply in build dir
 ######################################################################
     if [ -d $B ] ; then rm -rf $B ; fi ;  cp -a $S $B  
     cd $B/src
 
+    echo "Append the UT dictionary"
+    cat $W/merge-ut-dictionaries/src/mozcdic-ut.txt >> $B/src/data/dictionary_oss/dictionary00.txt
+
+    unzip -d $B/src/data/dictionary_oss $W/jigyosyo.zip
+    unzip -d $B/src/data/dictionary_oss $W/ken_all.zip
+    
+    cd $B/src/dictionary
+    echo "Generate zip code seed"
+    sed -i "s/from dictionary import zip_code_util/import zip_code_util/g" gen_zip_code_seed.py
+
+    cd $B/src/data/dictionary_oss
+    echo "Generating zip code seed ..."
+    python $B/src/dictionary/gen_zip_code_seed.py --zip_code=KEN_ALL.CSV --jigyosyo=JIGYOSYO.CSV >> dictionary09.txt
+    echo "Done."
+
+    cd $B/src
     cp -rf "$W/macuim/Mozc/uim" unix/
-    cp $W/${addfiles[0]} unix/uim
+    cp $W/BUILD.bazel unix/uim
 
     cd $B
     patch -p1 -i $W/bazel.patch
+    patch -p1 -i $W/gen_zip_code_seed.patch
     cd $B/src
     patch -p1 -i $W/mozc.patch
 
@@ -196,8 +211,10 @@ if [ $opt_config -eq 1 ] ; then
     # fi
 
     cd $B/src
-    # Temp fix for GCC 14
+    echo "Temp fix for GCC 14"
     sed -i -e '/Werror/d' third_party/protobuf/build_defs/cpp_opts.bzl
+
+    set +e
 fi
 
 if [ $opt_build -eq 1 ] ; then
@@ -214,8 +231,8 @@ if [ $opt_build -eq 1 ] ; then
 #    bazel build unix/fcitx5:fcitx5-mozc.so unix/icons --config oss_linux --compilation_mode opt
 #    bazel build unix/emacs:mozc_emacs_helper --config oss_linux --compilation_mode opt
 
-    bazel build server:mozc_server gui/tool:mozc_tool unix/fcitx5:fcitx5-mozc.so unix/icons unix/emacs:mozc_emacs_helper --config oss_linux --compilation_mode opt
-    bazel build unix/uim:uim-mozc unix/icons --config oss_linux --compilation_mode opt --cxxopt=-Wno-uninitialized --host_cxxopt=-Wno-uninitialized --experimental_cc_shared_library
+    bazel build server:mozc_server gui/tool:mozc_tool unix/fcitx5:fcitx5-mozc.so unix/icons unix/emacs:mozc_emacs_helper --config oss_linux --compilation_mode opt --verbose_failures
+    bazel build unix/uim:uim-mozc unix/icons --config oss_linux --compilation_mode opt --cxxopt=-Wno-uninitialized --host_cxxopt=-Wno-uninitialized --experimental_cc_shared_library --verbose_failures
     set +e
 fi
 
