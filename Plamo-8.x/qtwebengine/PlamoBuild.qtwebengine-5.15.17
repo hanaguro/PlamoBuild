@@ -1,0 +1,140 @@
+#!/bin/sh
+##############################################################
+pkgbase="qtwebengine"
+vers="5.15.17"
+basevers="5.15.12"
+url="https://invent.kde.org/qt/qt/qtwebengine.git"
+verify=""
+digest=""
+arch=`uname -m`
+build=B2
+src="qtwebengine"
+OPT_CONFIG="-proprietary-codecs -qt-webengine-ffmpeg -webp -webengine-icu -spellchecker -webengine-kerberos -webengine-webrtc-pipewire -webengine-python-version python3"
+DOCS="LICENSE.Chromium LICENSE.FDL LICENSE.GPL2 LICENSE.GPL3 LICENSE.GPL3-EXCEPT LICENSE.GPLv3 LICENSE.LGPL3 LICENSE.LGPLv3 config_help.txt"
+#patchfiles="no-h264.patch python3.12-imp.patch python3.12-six.patch qt5-webengine-ffmpeg5.patch qt5-webengine-ffmpeg7.patch qt5-webengine-icu-75.patch qt5-webengine-ninja-1.12.patch qt5-webengine-pipewire-0.3.patch"
+#patchfiles="no-h264.patch python3.12-imp.patch python3.12-six.patch qt5-webengine-pipewire-0.3.patch"
+patchfiles="no-h264.patch qt5-webengine-pipewire-0.3.patch qt5-webengine-icu-75.patch"
+# specifies files that are not in source archive and patchfiles
+addfiles=""
+compress=tzst
+commitid=v${vers}-lts
+##############################################################
+
+source /usr/share/plamobuild_functions.sh
+
+B=$W/build
+
+# このスクリプトで使う1文字変数の意味
+#
+# $W : このスクリプトを動かすカレントディレクトリ
+# $S : ソースコードのあるディレクトリ(デフォルト: $W/${src})
+# $B : ビルド用ディレクトリ(デフォルト: /tmp/build)
+# $P : ビルドしたファイルをインストールするディレクトリ（デフォルト: $W/work)
+
+if [ $# -eq 0 ] ; then
+  opt_download=0 ; opt_config=1 ; opt_build=1 ; opt_package=1
+else
+  opt_download=0 ; opt_config=0 ; opt_build=0 ; opt_package=0
+  for i in $@ ; do
+    case $i in
+    download) opt_download=1 ;;
+    config) opt_config=1 ;;
+    build) opt_build=1 ;;
+    package) opt_package=1 ;;
+    esac
+  done
+fi
+if [ $opt_download -eq 1 ] ; then
+    download_sources
+    git clone https://invent.kde.org/qt/qt/qtwebengine-chromium.git
+
+    cd $S
+    git submodule init
+    git submodule set-url src/3rdparty $W/qtwebengine-chromium
+    git submodule set-branch --branch 87-based src/3rdparty
+    git -c protocol.file.allow=always submodule update
+fi
+
+if [ $opt_config -eq 1 ] ; then
+
+    for f in $addfiles $patchfiles
+    do
+        if [ ! -f $f ]; then
+            echo "Required file ($f) is missing."
+            exit 255
+        fi
+    done
+
+######################################################################
+#  source copy build. patch apply in build dir
+######################################################################
+    if [ -d $B ] ; then rm -rf $B ; fi ;  cp -a $S $B  
+    cd $B
+#    for patch in $patchfiles ; do
+#       patch -p1 < $W/$patch
+#    done
+#    patch -p1 -d src/3rdparty -i "$W"/qt5-webengine-ffmpeg5.patch # Fix build with ffmpeg 5
+    patch -p1 -d src/3rdparty -i "$W"/qt5-webengine-pipewire-0.3.patch # Port to pipewire 0.3
+    patch -p2 -d src/3rdparty/chromium -i "$W"/qt5-webengine-icu-75.patch # Fix build with ICU 75
+#    patch -p2 -d src/3rdparty/chromium -i "$W"/qt5-webengine-ninja-1.12.patch # Fix build with ninja 1.12
+#    patch -p1 -d src/3rdparty/chromium -i "$W"/python3.12-imp.patch # Fix build with python 3.12 - patch from Debian
+#    patch -p1 -d src/3rdparty/chromium -i "$W"/python3.12-six.patch # Fix build with python 3.12 - patch from Debian
+#    patch -p1 -d src/3rdparty/chromium -i "$W"/qt5-webengine-ffmpeg7.patch
+    patch -p1 -i ../no-h264.patch
+
+    # if [ -f autogen.sh ] ; then
+    #   sh ./autogen.sh
+    # fi
+
+    export PKG_CONFIG_PATH=/usr/${libdir}/pkgconfig:/usr/share/pkgconfig
+    export LDFLAGS='-Wl,--as-needed' 
+#    ./configure --prefix=/usr --libdir=/usr/${libdir} --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man ${OPT_CONFIG}
+    qmake .  CONFIG+=force_debug_info -- ${OPT_CONFIG}
+    if [ $? != 0 ]; then
+        echo "configure error. $0 script stop"
+        exit 255
+    fi
+fi
+
+if [ $opt_build -eq 1 ] ; then
+    cd $B 
+    export LDFLAGS='-Wl,--as-needed'
+    make -j`nproc`
+    if [ $? != 0 ]; then
+        echo "build error. $0 script stop"
+        exit 255
+    fi
+fi
+
+if [ $opt_package -eq 1 ] ; then
+  check_root
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  cd $B
+
+  export LDFLAGS='-Wl,--as-needed'
+  make install INSTALL_ROOT=$P
+
+  find "$P/usr/lib" -type f -name '*.prl' -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
+  sed -e "s|$vers\ |$basevers |" -i "$P"/usr/lib/cmake/*/*Config.cmake
+
+
+################################
+#      install tweaks
+#  strip binaries, delete locale except ja, compress man,
+#  install docs and patches, compress them and  chown root.root
+################################
+  install_tweak
+
+#############################
+#   convert symlink to null file and
+#   add "ln -sf" command into install/doinst.sh
+################################
+  convert_links
+
+  cd $P
+  /sbin/makepkg ../$pkg.$compress <<EOF
+y
+1
+EOF
+
+fi
