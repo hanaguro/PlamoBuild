@@ -1,0 +1,11 @@
+diff -uprN cyrus-sasl-2.1.28.orig/plugins/cram.c cyrus-sasl-2.1.28/plugins/cram.c
+--- cyrus-sasl-2.1.28.orig/plugins/cram.c	2022-02-19 06:50:42.000000000 +0900
++++ cyrus-sasl-2.1.28/plugins/cram.c	2024-07-09 17:12:02.468913786 +0900
+@@ -44,6 +44,7 @@
+  */
+ 
+ #include <config.h>
++#include <time.h>
+ 
+ #include <string.h>
+ #include <stdlib.h>
