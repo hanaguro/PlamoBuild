@@ -2,12 +2,11 @@
 ##############################################################
 pkgbase="mozc"
 vers="2.30.5520.102"
-#url="https://github.com/google/mozc.git"
 url="https://github.com/fcitx/mozc.git"
 verify=""
 digest=""
 arch=`uname -m`
-build=B4
+build=B5
 src="mozc"
 url2="https://github.com/e-kato/macuim.git"
 OPT_CONFIG="--disable-static --enable-shared"
@@ -16,7 +15,6 @@ patchfiles="mozc.patch bazel.patch gen_zip_code_seed.patch"
 # specifies files that are not in source archive and patchfiles
 addfiles="BUILD.bazel"
 compress=tzst
-#commitid="d2fc9c7d9269cc84b9a4a680cafc382a55e90f42"
 commitid="5c09e44fbba173031dd6441343e2c59dd728da98"
 macuim_commit="7beac7ba000e0459a4dc933f3873b521664d2665"
 marge_ui_ditionaries_commit="6c5f28bbeba0aed95d1b56d7d027723cc1ef00cf"
@@ -408,18 +406,22 @@ y
 EOF
 
   cd $B/src
-  P2=$W/uim-mozc
-  mkdir -p $P2
-  install -D -m 755 bazel-bin/unix/uim/libuim-mozc.so "$P2/usr/lib/uim/plugin/libuim-mozc.so"
-  install -d "$P2/usr/share/uim"
-  install    -m 644 $W/macuim/Mozc/scm/*.scm "$P2/usr/share/uim/"
-  install -D -m 644 data/images/unix/ime_product_icon_opensource-32.png "$P2/usr/share/uim/pixmaps/mozc.png"
-  install    -m 644 data/images/unix/ui-tool.png "$P2/usr/share/uim/pixmaps/mozc_tool_selector.png"
-  install    -m 644 data/images/unix/ui-properties.png "$P2/usr/share/uim/pixmaps/mozc_tool_config_dialog.png"
-  install    -m 644 data/images/unix/ui-dictionary.png "$P2/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png"
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
+  install -D -m 755 bazel-bin/unix/uim/libuim-mozc.so "$P/usr/lib/uim/plugin/libuim-mozc.so"
+  install -d "$P/usr/share/uim"
+  install    -m 644 $W/macuim/Mozc/scm/*.scm "$P/usr/share/uim/"
+  install -D -m 644 data/images/unix/ime_product_icon_opensource-32.png "$P/usr/share/uim/pixmaps/mozc.png"
+  install    -m 644 data/images/unix/ui-tool.png "$P/usr/share/uim/pixmaps/mozc_tool_selector.png"
+  install    -m 644 data/images/unix/ui-properties.png "$P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png"
+  install    -m 644 data/images/unix/ui-dictionary.png "$P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png"
 
-  mkdir -p $P2/install
-  cat <<"EOF" > $P2/install/initpkg
+  mkdir -p $P/usr/share/licenses/uim-mozc
+  head -n 32 unix/uim/mozc.cc > $P/usr/share/licenses/uim-mozc/LICENSE
+
+  strip -g $P/usr/lib/uim/plugin/libuim-mozc.so
+
+  mkdir -p $P/install
+  cat <<"EOF" > $P/install/initpkg
 if [ -x /usr/bin/uim-module-manager ]; then
         uim-module-manager --register mozc
 fi
@@ -433,49 +435,48 @@ if [ -x /usr/bin/gtk-query-immodules-3.0 ]; then
 fi
 EOF
 
-  cd $P2
+  cd $P
   /sbin/makepkg ../uim_mozc-$vers-$arch-$build.$compress <<EOF
 y
 1
 EOF
 
   cd $B/src
-  P3=$W/fcitx-mozc
-  mkdir -p $P3
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
 
   # BSD-3-Clause
   sed -n 1,29p unix/fcitx5/fcitx_key_translator.h > Fcitx5
   sed -i -e 's|^\/\/[ ]\?||g' Fcitx5
-  install -Dm644 Fcitx5 "$P3"/usr/share/licenses/fcitx5-mozc/Fcitx5
+  install -Dm644 Fcitx5 "$P"/usr/share/licenses/fcitx5-mozc/Fcitx5
   # BSD-3-Clause
   sed -n 67,94p data/installer/credits_en.html > Mozc
-  install -Dm644 Mozc "$P3"/usr/share/licenses/fcitx5-mozc/Mozc
+  install -Dm644 Mozc "$P"/usr/share/licenses/fcitx5-mozc/Mozc
   # BSD-3-Clause
   sed -n 317,344p data/installer/credits_en.html > Breakpad
-  install -Dm644 Breakpad "$P3"/usr/share/licenses/fcitx5-mozc/Breakpad
+  install -Dm644 Breakpad "$P"/usr/share/licenses/fcitx5-mozc/Breakpad
   # NAIST-2003
   sed -n 355,424p data/installer/credits_en.html > IPAdic
-  install -Dm644 IPAdic "$P3"/usr/share/licenses/fcitx5-mozc/IPAdic
+  install -Dm644 IPAdic "$P"/usr/share/licenses/fcitx5-mozc/IPAdic
   # BSD-2-Clause
   sed -n 435,457p data/installer/credits_en.html > Japanese-Usage-Dictionary
-  install -Dm644 Japanese-Usage-Dictionary "$P3"/usr/share/licenses/fcitx5-mozc/Japanese-Usage-Dictionary
+  install -Dm644 Japanese-Usage-Dictionary "$P"/usr/share/licenses/fcitx5-mozc/Japanese-Usage-Dictionary
   # Public Domain Data
   sed -n 468,470p data/installer/credits_en.html > Okinawa-Dictionary
-  install -Dm644 Okinawa-Dictionary "$P3"/usr/share/licenses/fcitx5-mozc/Okinawa-Dictionary
+  install -Dm644 Okinawa-Dictionary "$P"/usr/share/licenses/fcitx5-mozc/Okinawa-Dictionary
   # BSD-3-Clause
   sed -n 481,513p data/installer/credits_en.html > Protocol-Buffers
-  install -Dm644 Protocol-Buffers "$P3"/usr/share/licenses/fcitx5-mozc/Protocol-Buffers
+  install -Dm644 Protocol-Buffers "$P"/usr/share/licenses/fcitx5-mozc/Protocol-Buffers
   # MIT
   sed -n 698,704p data/installer/credits_en.html > Tamachi-Phonetic-Kanji-Alphabet
-  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P3"/usr/share/licenses/fcitx5-mozc/Tamachi-Phonetic-Kanji-Alphabet
+  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P"/usr/share/licenses/fcitx5-mozc/Tamachi-Phonetic-Kanji-Alphabet
   # MIT
   sed -n 762,782p data/installer/credits_en.html > Windows-Implementation-Library
   sed -i -e 's|^[ \t]*||g' Windows-Implementation-Library
-  install -Dm644 Windows-Implementation-Library "$P3"/usr/share/licenses/fcitx5-mozc/Windows-Implementation-Library
+  install -Dm644 Windows-Implementation-Library "$P"/usr/share/licenses/fcitx5-mozc/Windows-Implementation-Library
 
-  install -Dm755 bazel-bin/unix/fcitx5/fcitx5-mozc.so "$P3"/usr/lib/fcitx5/fcitx5-mozc.so
-  install -Dm644 unix/fcitx5/mozc-addon.conf "$P3"/usr/share/fcitx5/addon/mozc.conf
-  install -Dm644 unix/fcitx5/mozc.conf "$P3"/usr/share/fcitx5/inputmethod/mozc.conf
+  install -Dm755 bazel-bin/unix/fcitx5/fcitx5-mozc.so "$P"/usr/lib/fcitx5/fcitx5-mozc.so
+  install -Dm644 unix/fcitx5/mozc-addon.conf "$P"/usr/share/fcitx5/addon/mozc.conf
+  install -Dm644 unix/fcitx5/mozc.conf "$P"/usr/share/fcitx5/inputmethod/mozc.conf
 
   for pofile in unix/fcitx5/po/*.po
   do
@@ -483,77 +484,81 @@ EOF
       lang=${filename/.po/}
       mofile=${pofile/.po/.mo}
       msgfmt ${pofile} -o ${mofile}
-      install -Dm644 ${mofile} "$P3"/usr/share/locale/${lang}/LC_MESSAGES/fcitx5-mozc.mo
+      install -Dm644 ${mofile} "$P"/usr/share/locale/${lang}/LC_MESSAGES/fcitx5-mozc.mo
   done
 
   msgfmt --xml -d unix/fcitx5/po/ --template unix/fcitx5/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml.in -o unix/fcitx5/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml
-  install -Dm644 unix/fcitx5/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml "$P3"/usr/share/metainfo/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml
+  install -Dm644 unix/fcitx5/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml "$P"/usr/share/metainfo/org.fcitx.Fcitx5.Addon.Mozc.metainfo.xml
 
   cd bazel-bin/unix
 
   unzip -o icons.zip
 
-  install -Dm644 mozc.png                                     "$P3"/usr/share/icons/hicolor/128x128/apps/org.fcitx.Fcitx5.fcitx_mozc.png
-  install -Dm644 alpha_full.svg                               "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_full.svg
-  install -Dm644 alpha_half.svg                               "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_half.svg
-  install -Dm644 direct.svg                                   "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_direct.svg
-  install -Dm644 hiragana.svg                                 "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_hiragana.svg
-  install -Dm644 katakana_full.svg                            "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_full.svg
-  install -Dm644 katakana_half.svg                            "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_half.svg
-  install -Dm644 outlined/dictionary.svg                      "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_dictionary.svg
-  install -Dm644 outlined/properties.svg                      "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_properties.svg
-  install -Dm644 outlined/tool.svg                            "$P3"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_tool.svg
+  install -Dm644 mozc.png                                     "$P"/usr/share/icons/hicolor/128x128/apps/org.fcitx.Fcitx5.fcitx_mozc.png
+  install -Dm644 alpha_full.svg                               "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_full.svg
+  install -Dm644 alpha_half.svg                               "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_half.svg
+  install -Dm644 direct.svg                                   "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_direct.svg
+  install -Dm644 hiragana.svg                                 "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_hiragana.svg
+  install -Dm644 katakana_full.svg                            "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_full.svg
+  install -Dm644 katakana_half.svg                            "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_half.svg
+  install -Dm644 outlined/dictionary.svg                      "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_dictionary.svg
+  install -Dm644 outlined/properties.svg                      "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_properties.svg
+  install -Dm644 outlined/tool.svg                            "$P"/usr/share/icons/hicolor/scalable/apps/org.fcitx.Fcitx5.fcitx_mozc_tool.svg
 
-  ln -s org.fcitx.Fcitx5.fcitx_mozc.png                       "$P3"/usr/share/icons/hicolor/128x128/apps/fcitx_mozc.png
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_alpha_full.svg            "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_alpha_full.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_alpha_half.svg            "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_alpha_half.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_direct.svg                "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_direct.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_hiragana.svg              "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_hiragana.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_katakana_full.svg         "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_katakana_full.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_katakana_half.svg         "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_katakana_half.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_dictionary.svg            "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_dictionary.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_properties.svg            "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_properties.svg
-  ln -s org.fcitx.Fcitx5.fcitx_mozc_tool.svg                  "$P3"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_tool.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc.png                       "$P"/usr/share/icons/hicolor/128x128/apps/fcitx_mozc.png
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_alpha_full.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_alpha_full.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_alpha_half.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_alpha_half.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_direct.svg                "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_direct.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_hiragana.svg              "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_hiragana.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_katakana_full.svg         "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_katakana_full.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_katakana_half.svg         "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_katakana_half.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_dictionary.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_dictionary.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_properties.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_properties.svg
+  ln -s org.fcitx.Fcitx5.fcitx_mozc_tool.svg                  "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_tool.svg
 
-  cd $P3
+  strip -g $P/usr/lib/fcitx5/fcitx5-mozc.so
+
+  cd $P
   /sbin/makepkg ../fcitx5_mozc-$vers-$arch-$build.$compress <<EOF
 y
 1
 EOF
  
   cd $B/src
-  P4=$W/emacs-mozc
-  mkdir -p $P4
+  if [ -d $P ] ; then rm -rf $P ; fi ; mkdir -p $P
 
   # BSD-3-Clause
   sed -n 67,94p data/installer/credits_en.html > Mozc
-  install -Dm644 Mozc "$P4"/usr/share/licenses/emacs-mozc/Mozc
+  install -Dm644 Mozc "$P"/usr/share/licenses/emacs-mozc/Mozc
   # BSD-3-Clause
   sed -n 317,344p data/installer/credits_en.html > Breakpad
-  install -Dm644 Breakpad "$P4"/usr/share/licenses/emacs-mozc/Breakpad
+  install -Dm644 Breakpad "$P"/usr/share/licenses/emacs-mozc/Breakpad
   # NAIST-2003
   sed -n 355,424p data/installer/credits_en.html > IPAdic
-  install -Dm644 IPAdic "$P4"/usr/share/licenses/emacs-mozc/IPAdic
+  install -Dm644 IPAdic "$P"/usr/share/licenses/emacs-mozc/IPAdic
   # BSD-2-Clause
   sed -n 435,457p data/installer/credits_en.html > Japanese-Usage-Dictionary
-  install -Dm644 Japanese-Usage-Dictionary "$P4"/usr/share/licenses/emacs-mozc/Japanese-Usage-Dictionary
+  install -Dm644 Japanese-Usage-Dictionary "$P"/usr/share/licenses/emacs-mozc/Japanese-Usage-Dictionary
   # Public Domain Data
   sed -n 468,470p data/installer/credits_en.html > Okinawa-Dictionary
-  install -Dm644 Okinawa-Dictionary "$P4"/usr/share/licenses/emacs-mozc/Okinawa-Dictionary
+  install -Dm644 Okinawa-Dictionary "$P"/usr/share/licenses/emacs-mozc/Okinawa-Dictionary
   # BSD-3-Clause
   sed -n 481,513p data/installer/credits_en.html > Protocol-Buffers
-  install -Dm644 Protocol-Buffers "$P4"/usr/share/licenses/emacs-mozc/Protocol-Buffers
+  install -Dm644 Protocol-Buffers "$P"/usr/share/licenses/emacs-mozc/Protocol-Buffers
   # MIT
   sed -n 698,704p data/installer/credits_en.html > Tamachi-Phonetic-Kanji-Alphabet
-  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P4"/usr/share/licenses/emacs-mozc/Tamachi-Phonetic-Kanji-Alphabet
+  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P"/usr/share/licenses/emacs-mozc/Tamachi-Phonetic-Kanji-Alphabet
   # MIT
   sed -n 762,782p data/installer/credits_en.html > Windows-Implementation-Library
   sed -i -e 's|^[ \t]*||g' Windows-Implementation-Library
-  install -Dm644 Windows-Implementation-Library "$P4"/usr/share/licenses/emacs-mozc/Windows-Implementation-Library
+  install -Dm644 Windows-Implementation-Library "$P"/usr/share/licenses/emacs-mozc/Windows-Implementation-Library
 
-  install -Dm755 bazel-bin/unix/emacs/mozc_emacs_helper "$P4"/usr/bin/mozc_emacs_helper
-  install -Dm644 unix/emacs/mozc.el "$P4"/usr/share/emacs/site-lisp/mozc.el
-   cd $P4
+  install -Dm755 bazel-bin/unix/emacs/mozc_emacs_helper "$P"/usr/bin/mozc_emacs_helper
+  install -Dm644 unix/emacs/mozc.el "$P"/usr/share/emacs/site-lisp/mozc.el
+
+  strip $P/usr/bin/mozc_emacs_helper
+
+  cd $P
   /sbin/makepkg ../emacs_mozc-$vers-$arch-$build.$compress <<EOF
 y
 1
