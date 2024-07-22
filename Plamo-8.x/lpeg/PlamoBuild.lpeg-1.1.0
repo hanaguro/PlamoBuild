@@ -6,7 +6,7 @@ url="https://www.inf.puc-rio.br/~roberto/lpeg/lpeg-1.1.0.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B4
 src="lpeg-1.1.0"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS="HISTORY README.md"
@@ -76,7 +76,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
-    make -j3 CFLAGS="-I/usr/include/lua5.4 -fPIC"
+    make -j3 CFLAGS="-I/usr/include/luajit-2.0 -fPIC"
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
         exit 255
@@ -90,8 +90,8 @@ if [ $opt_package -eq 1 ] ; then
 
   export LDFLAGS='-Wl,--as-needed'
 #  make install DESTDIR=$P
-  install -Dm0755 lpeg.so "$P"/usr/lib/lua/5.4/lpeg.so
-  install -Dm0644 re.lua "$P"/usr/share/lua/5.4/re.lua
+  install -Dm0755 lpeg.so "$P"/usr/lib/lua/5.1/lpeg.so
+  install -Dm0644 re.lua "$P"/usr/lib/lua/5.1/re.lua
 
 
 ################################

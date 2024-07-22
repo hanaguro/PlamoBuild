@@ -6,7 +6,7 @@ url="https://www.leonerd.org.uk/code/libvterm/libvterm-0.3.3.tar.gz"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B2
 src="libvterm-0.3.3"
 OPT_CONFIG="--disable-static --enable-shared"
 DOCS="LICENSE"
@@ -76,7 +76,7 @@ fi
 if [ $opt_build -eq 1 ] ; then
     cd $B 
     export LDFLAGS='-Wl,--as-needed'
-    make -j3
+    make -j`nproc`
     if [ $? != 0 ]; then
         echo "build error. $0 script stop"
         exit 255
