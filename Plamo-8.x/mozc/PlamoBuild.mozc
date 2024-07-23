@@ -359,29 +359,29 @@ if [ $opt_package -eq 1 ] ; then
 
   # BSD-3-Clause
   sed -n 67,94p data/installer/credits_en.html > Mozc
-  install -Dm644 Mozc "$P"/usr/share/licenses/mozc/Mozc
+  install -Dm644 Mozc $docdir/mozc/Mozc
   # BSD-3-Clause
   sed -n 317,344p data/installer/credits_en.html > Breakpad
-  install -Dm644 Breakpad "$P"/usr/share/licenses/mozc/Breakpad
+  install -Dm644 Breakpad $docdir/mozc/Breakpad
   # NAIST-2003
   sed -n 355,424p data/installer/credits_en.html > IPAdic
-  install -Dm644 IPAdic "$P"/usr/share/licenses/mozc/IPAdic
+  install -Dm644 IPAdic $docdir/mozc/IPAdic
   # BSD-2-Clause
   sed -n 435,457p data/installer/credits_en.html > Japanese-Usage-Dictionary
-  install -Dm644 Japanese-Usage-Dictionary "$P"/usr/share/licenses/mozc/Japanese-Usage-Dictionary
+  install -Dm644 Japanese-Usage-Dictionary $docdir/mozc/Japanese-Usage-Dictionary
   # Public Domain Data
   sed -n 468,470p data/installer/credits_en.html > Okinawa-Dictionary
-  install -Dm644 Okinawa-Dictionary "$P"/usr/share/licenses/mozc/Okinawa-Dictionary
+  install -Dm644 Okinawa-Dictionary $docdir/mozc/Okinawa-Dictionary
   # BSD-3-Clause
   sed -n 481,513p data/installer/credits_en.html > Protocol-Buffers
-  install -Dm644 Protocol-Buffers "$P"/usr/share/licenses/mozc/Protocol-Buffers
+  install -Dm644 Protocol-Buffers $docdir/mozc/Protocol-Buffers
   # MIT
   sed -n 698,704p data/installer/credits_en.html > Tamachi-Phonetic-Kanji-Alphabet
-  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P"/usr/share/licenses/mozc/Tamachi-Phonetic-Kanji-Alphabet
+  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet $docdir/mozc/Tamachi-Phonetic-Kanji-Alphabet
   # MIT
   sed -n 762,782p data/installer/credits_en.html > Windows-Implementation-Library
   sed -i -e 's|^[ \t]*||g' Windows-Implementation-Library
-  install -Dm644 Windows-Implementation-Library "$P"/usr/share/licenses/mozc/Windows-Implementation-Library
+  install -Dm644 Windows-Implementation-Library $docdir/mozc/Windows-Implementation-Library
 
   install -Dm755 bazel-bin/server/mozc_server "$P"/usr/lib/mozc/mozc_server
   install -Dm755 bazel-bin/gui/tool/mozc_tool "$P"/usr/lib/mozc/mozc_tool
@@ -415,8 +415,8 @@ EOF
   install    -m 644 data/images/unix/ui-properties.png "$P/usr/share/uim/pixmaps/mozc_tool_config_dialog.png"
   install    -m 644 data/images/unix/ui-dictionary.png "$P/usr/share/uim/pixmaps/mozc_tool_dictionary_tool.png"
 
-  mkdir -p $P/usr/share/licenses/uim-mozc
-  head -n 32 unix/uim/mozc.cc > $P/usr/share/licenses/uim-mozc/LICENSE
+  mkdir -p $docdir/uim-mozc
+  head -n 32 unix/uim/mozc.cc > $docdir/uim-mozc/LICENSE
 
   strip -g $P/usr/lib/uim/plugin/libuim-mozc.so
 
@@ -447,32 +447,32 @@ EOF
   # BSD-3-Clause
   sed -n 1,29p unix/fcitx5/fcitx_key_translator.h > Fcitx5
   sed -i -e 's|^\/\/[ ]\?||g' Fcitx5
-  install -Dm644 Fcitx5 "$P"/usr/share/licenses/fcitx5-mozc/Fcitx5
+  install -Dm644 Fcitx5 $docdir/fcitx5-mozc/Fcitx5
   # BSD-3-Clause
   sed -n 67,94p data/installer/credits_en.html > Mozc
-  install -Dm644 Mozc "$P"/usr/share/licenses/fcitx5-mozc/Mozc
+  install -Dm644 Mozc $docdir/fcitx5-mozc/Mozc
   # BSD-3-Clause
   sed -n 317,344p data/installer/credits_en.html > Breakpad
-  install -Dm644 Breakpad "$P"/usr/share/licenses/fcitx5-mozc/Breakpad
+  install -Dm644 Breakpad $docdir/fcitx5-mozc/Breakpad
   # NAIST-2003
   sed -n 355,424p data/installer/credits_en.html > IPAdic
-  install -Dm644 IPAdic "$P"/usr/share/licenses/fcitx5-mozc/IPAdic
+  install -Dm644 IPAdic $docdir/fcitx5-mozc/IPAdic
   # BSD-2-Clause
   sed -n 435,457p data/installer/credits_en.html > Japanese-Usage-Dictionary
-  install -Dm644 Japanese-Usage-Dictionary "$P"/usr/share/licenses/fcitx5-mozc/Japanese-Usage-Dictionary
+  install -Dm644 Japanese-Usage-Dictionary $docdir/fcitx5-mozc/Japanese-Usage-Dictionary
   # Public Domain Data
   sed -n 468,470p data/installer/credits_en.html > Okinawa-Dictionary
-  install -Dm644 Okinawa-Dictionary "$P"/usr/share/licenses/fcitx5-mozc/Okinawa-Dictionary
+  install -Dm644 Okinawa-Dictionary $docdir/fcitx5-mozc/Okinawa-Dictionary
   # BSD-3-Clause
   sed -n 481,513p data/installer/credits_en.html > Protocol-Buffers
-  install -Dm644 Protocol-Buffers "$P"/usr/share/licenses/fcitx5-mozc/Protocol-Buffers
+  install -Dm644 Protocol-Buffers $docdir/fcitx5-mozc/Protocol-Buffers
   # MIT
   sed -n 698,704p data/installer/credits_en.html > Tamachi-Phonetic-Kanji-Alphabet
-  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P"/usr/share/licenses/fcitx5-mozc/Tamachi-Phonetic-Kanji-Alphabet
+  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet $docdir/fcitx5-mozc/Tamachi-Phonetic-Kanji-Alphabet
   # MIT
   sed -n 762,782p data/installer/credits_en.html > Windows-Implementation-Library
   sed -i -e 's|^[ \t]*||g' Windows-Implementation-Library
-  install -Dm644 Windows-Implementation-Library "$P"/usr/share/licenses/fcitx5-mozc/Windows-Implementation-Library
+  install -Dm644 Windows-Implementation-Library $docdir/fcitx5-mozc/Windows-Implementation-Library
 
   install -Dm755 bazel-bin/unix/fcitx5/fcitx5-mozc.so "$P"/usr/lib/fcitx5/fcitx5-mozc.so
   install -Dm644 unix/fcitx5/mozc-addon.conf "$P"/usr/share/fcitx5/addon/mozc.conf
@@ -529,29 +529,29 @@ EOF
 
   # BSD-3-Clause
   sed -n 67,94p data/installer/credits_en.html > Mozc
-  install -Dm644 Mozc "$P"/usr/share/licenses/emacs-mozc/Mozc
+  install -Dm644 Mozc $docdir/emacs-mozc/Mozc
   # BSD-3-Clause
   sed -n 317,344p data/installer/credits_en.html > Breakpad
-  install -Dm644 Breakpad "$P"/usr/share/licenses/emacs-mozc/Breakpad
+  install -Dm644 Breakpad $docdir/emacs-mozc/Breakpad
   # NAIST-2003
   sed -n 355,424p data/installer/credits_en.html > IPAdic
-  install -Dm644 IPAdic "$P"/usr/share/licenses/emacs-mozc/IPAdic
+  install -Dm644 IPAdic $docdir/emacs-mozc/IPAdic
   # BSD-2-Clause
   sed -n 435,457p data/installer/credits_en.html > Japanese-Usage-Dictionary
-  install -Dm644 Japanese-Usage-Dictionary "$P"/usr/share/licenses/emacs-mozc/Japanese-Usage-Dictionary
+  install -Dm644 Japanese-Usage-Dictionary $docdir/emacs-mozc/Japanese-Usage-Dictionary
   # Public Domain Data
   sed -n 468,470p data/installer/credits_en.html > Okinawa-Dictionary
-  install -Dm644 Okinawa-Dictionary "$P"/usr/share/licenses/emacs-mozc/Okinawa-Dictionary
+  install -Dm644 Okinawa-Dictionary $docdir/emacs-mozc/Okinawa-Dictionary
   # BSD-3-Clause
   sed -n 481,513p data/installer/credits_en.html > Protocol-Buffers
-  install -Dm644 Protocol-Buffers "$P"/usr/share/licenses/emacs-mozc/Protocol-Buffers
+  install -Dm644 Protocol-Buffers $docdir/emacs-mozc/Protocol-Buffers
   # MIT
   sed -n 698,704p data/installer/credits_en.html > Tamachi-Phonetic-Kanji-Alphabet
-  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet "$P"/usr/share/licenses/emacs-mozc/Tamachi-Phonetic-Kanji-Alphabet
+  install -Dm644 Tamachi-Phonetic-Kanji-Alphabet $docdir/emacs-mozc/Tamachi-Phonetic-Kanji-Alphabet
   # MIT
   sed -n 762,782p data/installer/credits_en.html > Windows-Implementation-Library
   sed -i -e 's|^[ \t]*||g' Windows-Implementation-Library
-  install -Dm644 Windows-Implementation-Library "$P"/usr/share/licenses/emacs-mozc/Windows-Implementation-Library
+  install -Dm644 Windows-Implementation-Library $docdir/emacs-mozc/Windows-Implementation-Library
 
   install -Dm755 bazel-bin/unix/emacs/mozc_emacs_helper "$P"/usr/bin/mozc_emacs_helper
   install -Dm644 unix/emacs/mozc.el "$P"/usr/share/emacs/site-lisp/mozc.el
