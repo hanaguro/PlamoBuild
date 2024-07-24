@@ -1,12 +1,12 @@
 #!/bin/sh
 ##############################################################
-pkgbase="qt"
+pkgbase="qt6"
 vers="6.7.2"
 url="https://download.qt.io/archive/qt/6.7/6.7.2/single/qt-everywhere-src-6.7.2.tar.xz"
 verify=""
 digest="md5sum:06d35b47349c7c0a45710daad359e07b"
 arch=`uname -m`
-build=B1
+build=B2
 src="qt-everywhere-src-6.7.2"
 OPT_CONFIG="-DCMAKE_BUILD_TYPE=Release 
 -DCMAKE_INSTALL_PREFIX=/usr 
@@ -118,32 +118,46 @@ if [ $opt_package -eq 1 ] ; then
 # Install symlinks for user-facing tools
   cd "$P"
 
-# Ensure 'usr/bin' directory exists
-  mkdir -p usr/bin
+## Ensure 'usr/bin' directory exists
+#  mkdir -p usr/bin
 
-# Find all 'user_facing_tool_links.txt' files in the '../build' directory
-  txts=$(find ../build -name user_facing_tool_links.txt)
+## Find all 'user_facing_tool_links.txt' files in the '../build' directory
+#  txts=$(find ../build -name user_facing_tool_links.txt)
 
-# Iterate over each 'user_facing_tool_links.txt' file
-  for t in $txts; do
-      # Read each line in the 'user_facing_tool_links.txt' file
-      while IFS= read -r line; do
-          # Extract source and target paths
-          src=$(echo $line | cut -d' ' -f1)
-          target=$(echo $line | cut -d' ' -f2)
-          
-          # Create the full target path under 'usr/bin'
-          full_target="usr/bin/$(basename $target)"
-          
-          # Remove existing link if it exists
-          if [ -L "$full_target" ] || [ -e "$full_target" ]; then
-              rm -f "$full_target"
-          fi
+## Iterate over each 'user_facing_tool_links.txt' file
+#  for t in $txts; do
+#      # Read each line in the 'user_facing_tool_links.txt' file
+#      while IFS= read -r line; do
+#          # Extract source and target paths
+#          src=$(echo $line | cut -d' ' -f1)
+#          target=$(echo $line | cut -d' ' -f2)
+#          
+#          # Create the full target path under 'usr/bin'
+#          full_target="usr/bin/$(basename $target)"
+#          
+#          # Remove existing link if it exists
+#          if [ -L "$full_target" ] || [ -e "$full_target" ]; then
+#              rm -f "$full_target"
+#          fi
+#
+#          # Create the symbolic link
+#          ln -s "$src" "$full_target"
+#        
+#      done < "$t"
+#  done
 
-          # Create the symbolic link
-          ln -s "$src" "$full_target"
-        
-      done < "$t"
+  set +e
+  cd $P/usr/lib/qt6/bin
+  strip *
+  set -e
+
+  mkdir -p $P/usr/bin
+  cd $P/usr/bin
+  for i in $P/usr/lib/qt6/bin/*; do
+	  if [[ $i == *6 ]]; then
+		  continue
+	  fi
+	  ln -s ../lib/qt6/bin/$(basename "$i") $(basename "${i}")6
   done
 
   cd $S/qtbase
