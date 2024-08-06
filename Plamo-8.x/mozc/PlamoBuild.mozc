@@ -1,12 +1,12 @@
 #!/bin/sh
 ##############################################################
 pkgbase="mozc"
-vers="2.30.5520.102"
+vers="2.30.5544.102"
 url="https://github.com/fcitx/mozc.git"
 verify=""
 digest=""
 arch=`uname -m`
-build=B5
+build=B1
 src="mozc"
 url2="https://github.com/e-kato/macuim.git"
 OPT_CONFIG="--disable-static --enable-shared"
@@ -15,25 +15,26 @@ patchfiles="mozc.patch bazel.patch gen_zip_code_seed.patch"
 # specifies files that are not in source archive and patchfiles
 addfiles="BUILD.bazel"
 compress=tzst
-commitid="5c09e44fbba173031dd6441343e2c59dd728da98"
-macuim_commit="7beac7ba000e0459a4dc933f3873b521664d2665"
-marge_ui_ditionaries_commit="6c5f28bbeba0aed95d1b56d7d027723cc1ef00cf"
-mozcdic_ut_alt_cannadic="9e71156adf8cbaf148fe76bc12539f55b461e163"
-mozcdic_ut_edict2="38f7f74726d36b4ece85adadd3739b6177592108"
-mozcdic_ut_jawiki="afd4a37c1ba1fcd4302043cde73525e84b2c0eec"
-mozcdic_ut_neologd="3aa888db141db910e4161598fcd929e49794533d"
-mozcdic_ut_personal_names="e1049584984ac9376685937661ae18c968e25c48"
-mozcdic_ut_place_names="faaf64ed7b8eac6775be9ad2269aa10d7fb992c3"
-mozcdic_ut_skk_jisyo="e1f26b891ea80f52f846791959fa8e4acf36fa99"
-mozcdic_ut_sudachidict="3ad17aa28c2e817acecbba30040c776fa9619fd4"
-breakpad_commit="78f7ae4"
-gtest_commit="1d17ea1"
-gyp_commit="1615ec3"
-japanese_usage_dictionary_commit="a4a6677"
-protobuf_commit="3836fd3"
-abseil_cpp_commit="9957f27"
-dictext_commit="d072c88"
-neologd_commit="abc61e3"
+commitid="57e67f2a25e4c0861e0e422da0c7d4c232d89fcc"
+macuim_id="7beac7ba000e0459a4dc933f3873b521664d2665"
+merge_ui_ditionaries_id="1f1cdcf545b952f84fdad78d58c0db7a662b592d"
+mozcdic_ut_alt_cannadic_id="50fee0397b87fe508f9edd45bac56f5290d8ce66"
+mozcdic_ut_edict2_id="b2112277d0d479b9218f42772356da3601b3e8cf"
+mozcdic_ut_jawiki_id="29dd6d3202119d88a2356a11300b7b338f5cb950"
+mozcdic_ut_neologd_id="b7035b88db25ad1a933f05a33f193711c6c3b2db"
+mozcdic_ut_personal_names_id="5df5cedaef3b55c509cacfbf3e97ded852535a1b"
+mozcdic_ut_place_names_id="5c2167541200528d8b25214c52be7a4c3dd3b89b"
+mozcdic_ut_skk_jisyo_id="7300f19e6a3f27334ed7af64589de8782549a13f"
+mozcdic_ut_sudachidict_id="a754f1fff5fded62cc066aa6be0ab0169059a144"
+breakpad_id="78f7ae4"
+googletest_id="1d17ea1"
+gyp_id="1615ec3"
+japanese_usage_dictionary_id="a4a6677"
+jsoncpp_id="69098a1"
+protobuf_id="3836fd3"
+abseil_cpp_id="9957f27"
+mozcdict_ext_id="d072c88"
+mecab_ipadic_neologd_id="abc61e3"
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
@@ -68,143 +69,99 @@ if [ $opt_download -eq 1 ] ; then
     cd $S
     git submodule update --init --recursive
 
-    cd $W
-    if [ ! -d macuim ];then
-    	git clone https://github.com/e-kato/macuim.git
-    fi
-    cd macuim
-    git checkout $macuim_commit
+    NAME_DICTIONARIES=(
+    'macuim'
+    'merge-ut-dictionaries'
+    'mozcdic-ut-alt-cannadic'
+    'mozcdic-ut-edict2'
+    'mozcdic-ut-jawiki'
+    'mozcdic-ut-neologd'
+    'mozcdic-ut-personal-names'
+    'mozcdic-ut-place-names'
+    'mozcdic-ut-skk-jisyo'
+    'mozcdic-ut-sudachidict'
+    'breakpad'
+    'googletest'
+    'gyp'
+    'japanese-usage-dictionary'
+    'jsoncpp'
+    'protobuf'
+    'abseil-cpp'
+    'mozcdict-ext'
+    'mecab-ipadic-neologd'
+    )
+    for dict in "${NAME_DICTIONARIES[@]}"
+    do
+	cd $W
+	echo "$dict"
+        if [ ! -d $dict ];then
+	    case $dict in
+        	    "macuim")
+        		    git_url="https://github.com/e-kato/$dict.git"
+        		    ;;
+        	    "merge-ut-dictionaries" | "mozcdic-ut-alt-cannadic" | "mozcdic-ut-edict2" | "mozcdic-ut-jawiki" | "mozcdic-ut-neologd" | "mozcdic-ut-personal-names" | "mozcdic-ut-place-names" | "mozcdic-ut-skk-jisyo" | "mozcdic-ut-sudachidict" )
+        	            git_url="https://github.com/utuhiro78/$dict.git"
+        		    ;;
+        	    "breakpad")
+        		    git_url="https://chromium.googlesource.com/breakpad/$dict"
+        		    ;;
+        	    "googletest" | "protobuf" )
+        		    git_url="https://github.com/google/$dict.git"
+        		    ;;
+        	    "gyp")
+        		    git_url="https://chromium.googlesource.com/external/$dict"
+        		    ;;
+        	    "japanese-usage-dictionary")
+        		    git_url="https://github.com/hiroyuki-komatsu/$dict.git"
+        		    ;;
+        	    "jsoncpp")
+        		    git_url="https://github.com/open-source-parsers/$dict.git"
+        		    ;;
+        	    "abseil-cpp")
+        		    git_url="https://github.com/abseil/$dict.git"
+        		    ;;
+        	    "mozcdict-ext")
+        		    git_url="https://github.com/reasonset/$dict.git"
+        		    ;;
+        	    "mecab-ipadic-neologd")
+        		    git_url="https://github.com/neologd/mecab-ipadic-neologd.git"
+        		    ;;
+	            *)
+			    echo "$dict: unknown dictionary"
+			    exit 1
+			    ;;
+            esac
+
+    	    git clone $git_url
+            cd $dict
+        else
+    	    cd $dict
+	    if git branch | grep master > /dev/null; then
+                git pull origin master
+	    elif git branch | grep main > /dev/null; then
+		git pull origin main
+	    fi
+        fi
+
+        if git branch | grep master > /dev/null; then
+            git checkout master
+        elif git branch | grep main > /dev/null; then
+            git checkout main
+	fi
+
+        if git branch | grep build > /dev/null; then
+    	    git checkout build
+        else
+	    tmp_commitid="${dict//-/_}id"
+            git checkout -b build ${!tmp_commitid}
+        fi
+    done
 
     cd $W
-    if [ ! -d merge-ut-dictionaries ];then
-    	git clone https://github.com/utuhiro78/merge-ut-dictionaries.git
-    fi
-    cd merge-ut-dictionaries
-    git checkout $marge_ui_ditionaries_commit 
-
-    cd $W
-    if [ ! -d mozcdic-ut-alt-cannadic ];then
-    	git clone https://github.com/utuhiro78/mozcdic-ut-alt-cannadic.git
-    fi
-    cd mozcdic-ut-alt-cannadic
-    git checkout $mozcdic_ut_alt_cannadic 
-
-    cd $W
-    if [ ! -d mozcdic-ut-edict2 ];then
-    	git clone https://github.com/utuhiro78/mozcdic-ut-edict2.git
-    fi
-    cd mozcdic-ut-edict2
-    git checkout $mozcdic_ut_edict2 
-
-    cd $W
-    if [ ! -d mozcdic-ut-jawiki ]; then
-    	git clone https://github.com/utuhiro78/mozcdic-ut-jawiki.git
-    fi
-    cd mozcdic-ut-jawiki
-    git checkout $mozcdic_ut_jawiki 
-
-    cd $W
-    if [ ! -d mozcdic-ut-neologd ];then
-	    git clone https://github.com/utuhiro78/mozcdic-ut-neologd.git
-    fi
-    cd mozcdic-ut-neologd
-    git checkout $mozcdic_ut_neologd 
-
-    cd $W
-    if [ ! -d mozcdic-ut-personal-names ];then
-    	git clone https://github.com/utuhiro78/mozcdic-ut-personal-names.git
-    fi
-    cd mozcdic-ut-personal-names
-    git checkout $mozcdic_ut_personal_names 
-
-    cd $W
-    if [ ! -d mozcdic-ut-place-names ];then
-   	git clone https://github.com/utuhiro78/mozcdic-ut-place-names.git
-    fi
-    cd mozcdic-ut-place-names
-    git checkout $mozcdic_ut_place_names 
-
-    cd $W
-    if [ ! -d mozcdic-ut-skk-jisyo ];then
-   	git clone https://github.com/utuhiro78/mozcdic-ut-skk-jisyo.git
-    fi
-    cd mozcdic-ut-skk-jisyo
-    git checkout $mozcdic_ut_skk_jisyo 
-
-    cd $W
-    if [ ! -d mozcdic-ut-sudachidict ];then 
-	git clone https://github.com/utuhiro78/mozcdic-ut-sudachidict.git
-    fi
-    cd mozcdic-ut-sudachidict
-    git checkout $mozcdic_ut_sudachidict 
-    
-    cd $W
-    wget --timestamping https://dumps.wikimedia.org/jawiki/20240701/jawiki-20240701-all-titles-in-ns0.gz
+    wget --timestamping https://dumps.wikimedia.org/jawiki/20240720/jawiki-20240720-all-titles-in-ns0.gz
 
     wget --timestamping https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip
     wget --timestamping https://www.post.japanpost.jp/zipcode/dl/oogaki/zip/ken_all.zip
-
-    if [ ! -d breakpad ]; then
-        git clone https://chromium.googlesource.com/breakpad/breakpad 
-    fi
-    cd breakpad
-    git checkout $breakpad_commit
-
-    cd $W
-    if [ ! -d googletest ];then
-        git clone https://github.com/google/googletest.git
-    fi
-    cd googletest
-    git checkout $gtest_commit
-
-    cd $W
-    if [ ! -d gyp ];then
-        git clone https://chromium.googlesource.com/external/gyp
-    fi
-    cd gyp
-    git checkout $gyp_commit
-
-    cd $W
-    if [ ! -d japanese-usage-dictionary ];then
-        git clone https://github.com/hiroyuki-komatsu/japanese-usage-dictionary.git
-    fi
-    cd japanese-usage-dictionary
-    git checkout $japanese_usage_dictionary_commit
-
-    cd $W
-    if [ ! -d jsoncpp ];then
-        git clone https://github.com/open-source-parsers/jsoncpp.git
-    fi
-    cd jsoncpp
-    git checkout $jsoncpp_commit
-
-    cd $W
-    if [ ! -d protobuf ];then
-       git clone https://github.com/google/protobuf.git
-    fi
-    cd protobuf
-    git checkout $protobuf_commit
-
-    cd $W
-    if [ ! -d abseil-cpp ];then
-        git clone https://github.com/abseil/abseil-cpp.git
-    fi
-    cd abseil-cpp
-    git checkout $abseil_cpp_commit
-
-    cd $W
-    if [ ! -d mozcdict-ext ];then
-        git clone https://github.com/reasonset/mozcdict-ext.git
-    fi
-    cd mozcdict-ext
-    git checkout $dictext_commit
-
-    cd $W
-    if [ ! -d mecab-ipadic-neologd ];then
-        git clone https://github.com/neologd/mecab-ipadic-neologd.git
-    fi
-    cd mecab-ipadic-neologd
-    git checkout $neologd_commit
 
     set +e
 fi
@@ -227,9 +184,10 @@ if [ $opt_config -eq 1 ] ; then
 
     echo "Use a dated snapshot for the JAWiki dump data"
     sed -i -e '/wget/d' count_word_hits.py
-    sed -i -e "s|filename = \"jawiki-|filename = \"$W/jawiki-|g" count_word_hits.py
-    sed -i -e 's|jawiki-[a-z0-9]\{6,8\}|jawiki-20240701|g' count_word_hits.py apply_word_hits.py
+    sed -i -e "s|file_name = \"jawiki-|file_name = \"$W/jawiki-|g" count_word_hits.py
+    sed -i -e 's|jawiki-[a-z0-9]\{6,8\}|jawiki-20240720|g' count_word_hits.py apply_word_hits.py
 
+    echo "Compile the UT dictionary"
     [[ -e mozcdic-ut.txt ]] && rm mozcdic-ut.txt
 
     ENABLED_DICTIONARIES=(
@@ -269,7 +227,9 @@ if [ $opt_config -eq 1 ] ; then
     cat $W/merge-ut-dictionaries/src/mozcdic-ut.txt >> $B/src/data/dictionary_oss/dictionary00.txt
 
     cd $B
+    echo "config submodule"
     git config protocol.file.allow always
+    git submodule init
     git config submodule.src/third_party/breakpad.url $W/breakpad
     git config submodule.src/third_party/gtest.url $W/googletest
     git config submodule.src/third_party/gyp.url $W/gyp
@@ -310,6 +270,11 @@ if [ $opt_config -eq 1 ] ; then
     ) | ruby .dev.utils/uniqword.rb 2> /dev/null >> "$B/src/data/dictionary_oss/dictionary09.txt"
 
     cd $B/src
+    echo "adjust QT_BASE_PATH"
+    sed 's|path = QT_BASE_PATH|path = "/usr/include/qt"|' -i WORKSPACE.bazel
+
+    cd $B/src
+    echo "prepare uim-mozc"
     cp -rf "$W/macuim/Mozc/uim" unix/
     cp $W/BUILD.bazel unix/uim
 
