@@ -6,7 +6,7 @@ url="https://github.com/fcitx/mozc.git"
 verify=""
 digest=""
 arch=`uname -m`
-build=B1
+build=B5
 src="mozc"
 url2="https://github.com/e-kato/macuim.git"
 OPT_CONFIG="--disable-static --enable-shared"
@@ -35,6 +35,7 @@ protobuf_id="3836fd3"
 abseil_cpp_id="9957f27"
 mozcdict_ext_id="d072c88"
 mecab_ipadic_neologd_id="abc61e3"
+jawiki_date="20240720"
 ##############################################################
 
 source /usr/share/plamobuild_functions.sh
@@ -158,7 +159,7 @@ if [ $opt_download -eq 1 ] ; then
     done
 
     cd $W
-    wget --timestamping https://dumps.wikimedia.org/jawiki/20240720/jawiki-20240720-all-titles-in-ns0.gz
+    wget --timestamping https://dumps.wikimedia.org/jawiki/${jawiki_date}/jawiki-${jawiki_date}-all-titles-in-ns0.gz
 
     wget --timestamping https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip
     wget --timestamping https://www.post.japanpost.jp/zipcode/dl/oogaki/zip/ken_all.zip
@@ -185,7 +186,7 @@ if [ $opt_config -eq 1 ] ; then
     echo "Use a dated snapshot for the JAWiki dump data"
     sed -i -e '/wget/d' count_word_hits.py
     sed -i -e "s|file_name = \"jawiki-|file_name = \"$W/jawiki-|g" count_word_hits.py
-    sed -i -e 's|jawiki-[a-z0-9]\{6,8\}|jawiki-20240720|g' count_word_hits.py apply_word_hits.py
+    sed -i -e "s|jawiki-[a-z0-9]\{6,8\}|jawiki-${jawiki_date}|g" count_word_hits.py apply_word_hits.py
 
     echo "Compile the UT dictionary"
     [[ -e mozcdic-ut.txt ]] && rm mozcdic-ut.txt
@@ -390,14 +391,6 @@ EOF
 if [ -x /usr/bin/uim-module-manager ]; then
         uim-module-manager --register mozc
 fi
-
-if [ -x /usr/bin/gtk-query-immodules-2.0 ]; then
-        /usr/bin/gtk-query-immodules-2.0 --update-cache
-fi
-
-if [ -x /usr/bin/gtk-query-immodules-3.0 ]; then
-        /usr/bin/gtk-query-immodules-3.0 --update-cache
-fi
 EOF
 
   cd $P
@@ -457,6 +450,7 @@ EOF
 
   cd bazel-bin/unix
 
+  set -e
   unzip -o icons.zip
 
   install -Dm644 mozc.png                                     "$P"/usr/share/icons/hicolor/128x128/apps/org.fcitx.Fcitx5.fcitx_mozc.png
@@ -480,6 +474,31 @@ EOF
   ln -s org.fcitx.Fcitx5.fcitx_mozc_dictionary.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_dictionary.svg
   ln -s org.fcitx.Fcitx5.fcitx_mozc_properties.svg            "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_properties.svg
   ln -s org.fcitx.Fcitx5.fcitx_mozc_tool.svg                  "$P"/usr/share/icons/hicolor/scalable/apps/fcitx_mozc_tool.svg
+
+#  install -D -m 644 $B/src/data/images/product_icon_32bpp-128.png $P/usr/share/icons/hicolor/128x128/apps/org.fcitx.Fcitx5.fcitx_mozc.png
+  install -D -m 644 $B/src/data/images/unix/ime_product_icon_opensource-32.png $P/usr/share/icons/hicolor/32x32/apps/org.fcitx.Fcitx5.fcitx_mozc.png
+  install -D -m 644 $B/scripts/icons/ui-alpha_full.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_full.png
+  install -D -m 644 $B/scripts/icons/ui-alpha_half.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_alpha_half.png
+  install -D -m 644 $B/scripts/icons/ui-direct.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_direct.png
+  install -D -m 644 $B/scripts/icons/ui-hiragana.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_hiragana.png
+  install -D -m 644 $B/scripts/icons/ui-katakana_full.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_full.png
+install -D -m 644 $B/scripts/icons/ui-katakana_half.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_katakana_half.png
+install -D -m 644 $B/scripts/icons/ui-dictionary.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_dictionary.png
+install -D -m 644 $B/scripts/icons/ui-properties.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_properties.png
+install -D -m 644 $B/scripts/icons/ui-tool.png $P/usr/share/icons/hicolor/48x48/apps/org.fcitx.Fcitx5.fcitx_mozc_tool.png
+
+#  ln -sf org.fcitx.Fcitx5.fcitx_mozc.png $P/usr/share/icons/hicolor/128x128/apps/fcitx_mozc.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc.png $P/usr/share/icons/hicolor/32x32/apps/fcitx_mozc.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_alpha_full.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_alpha_full.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_alpha_half.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_alpha_half.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_direct.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_direct.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_hiragana.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_hiragana.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_katakana_full.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_katakana_full.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_katakana_half.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_katakana_half.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_dictionary.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_dictionary.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_properties.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_properties.png
+  ln -sf org.fcitx.Fcitx5.fcitx_mozc_tool.png $P/usr/share/icons/hicolor/48x48/apps/fcitx_mozc_tool.png
+  set +e
 
   strip -g $P/usr/lib/fcitx5/fcitx5-mozc.so
 
