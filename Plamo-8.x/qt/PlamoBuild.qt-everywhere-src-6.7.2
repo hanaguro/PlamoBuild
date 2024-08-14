@@ -6,7 +6,7 @@ url="https://download.qt.io/archive/qt/6.7/6.7.2/single/qt-everywhere-src-6.7.2.
 verify=""
 digest="md5sum:06d35b47349c7c0a45710daad359e07b"
 arch=`uname -m`
-build=B2
+build=B3
 src="qt-everywhere-src-6.7.2"
 OPT_CONFIG="-DCMAKE_BUILD_TYPE=Release 
 -DCMAKE_INSTALL_PREFIX=/usr 
@@ -166,7 +166,77 @@ if [ $opt_package -eq 1 ] ; then
   cp -r src/plugins/platforms/xcb/gl_integrations/*.h "$P"/usr/include/qt6xcb-private/gl_integrations/
   cp -r src/plugins/platforms/xcb/nativepainting/*.h "$P"/usr/include/qt6xcb-private/nativepainting/
 
+  cd $S
+  # Add menu entries for all those hidden but great Qt applications:
+  # Qt6 logo:
+  mkdir -p $P/usr/share/icons/hicolor/{48x48,128x128}/apps
+  convert qtdoc/doc/src/images/qt-logo.png  -resize 48x48 $P/usr/share/icons/hicolor/48x48/apps/qt6-logo.png
+  convert qtdoc/doc/src/images/qt-logo.png  -resize 128x128 $P/usr/share/icons/hicolor/128x128/apps/qt6-logo.png
+  # Assistant icons
+  install -p -m644 -D qttools/src/assistant/assistant/images/assistant.png $P/usr/share/icons/hicolor/32x32/apps/qt6-assistant.png
+  install -p -m644 -D qttools/src/assistant/assistant/images/assistant-128.png $P/usr/share/icons/hicolor/128x128/apps/qt6-assistant.png
+  # Designer icon
+  install -p -m644 -D qttools/src/designer/src/designer/images/designer.png $P/usr/share/icons/hicolor/128x128/apps/qt6-designer.png
+  # QDbusViewer icons
+  install -p -m644 qttools/src/qdbus/qdbusviewer/images/qdbusviewer.png $P/usr/share/icons/hicolor/32x32/apps/qt6-qdbusviewer.png
+  install -p -m644 qttools/src/qdbus/qdbusviewer/images/qdbusviewer-128.png $P/usr/share/icons/hicolor/128x128/apps/qt6-qdbusviewer.png
+  # Linguist icons
+  for icon in qttools/src/linguist/linguist/images/icons/linguist-*-32.png ; do
+    size=$(echo $(basename ${icon}) | cut -d- -f2)
+    install -p -m644 -D ${icon} $P/usr/share/icons/hicolor/${size}x${size}/apps/qt6-linguist.png
+  done
+
   set +e
+  
+  # And the .desktop files too:
+  mkdir -p $P/usr/share/applications
+  cat <<EOF > $P/usr/share/applications/qt6-designer.desktop
+[Desktop Entry]
+Name=Qt6 Designer
+GenericName=Interface Designer
+Comment=Design GUIs for Qt6 applications
+Exec=designer6
+Icon=qt6-designer
+MimeType=application/x-designer;
+Terminal=false
+Encoding=UTF-8
+Type=Application
+Categories=Qt;Development;
+EOF
+  cat <<EOF > $P/usr/share/applications/qt6-assistant.desktop
+[Desktop Entry]
+Name=Qt6 Assistant 
+Comment=Shows Qt6 documentation and examples
+Exec=assistant6
+Icon=qt6-assistant
+Terminal=false
+Encoding=UTF-8
+Type=Application
+Categories=Qt;Development;Documentation;
+EOF
+  cat <<EOF > $P/usr/share/applications/qt6-linguist.desktop
+[Desktop Entry]
+Name=Qt6 Linguist 
+Comment=Add translations to Qt6 applications
+Exec=linguist6
+Icon=qt6-linguist
+MimeType=text/vnd.trolltech.linguist;application/x-linguist;
+Terminal=false
+Encoding=UTF-8
+Type=Application
+Categories=Qt;Development;
+EOF
+  cat <<EOF > $P/usr/share/applications/qt6-qdbusviewer.desktop
+[Desktop Entry]
+Name=Qt6 QDbusViewer 
+GenericName=Qt6 D-Bus Debugger
+Comment=Debug D-Bus applications
+Exec=qdbusviewer6
+Icon=qt6-qdbusviewer
+Terminal=false
+Type=Application
+Categories=Qt;Development;Debugger;
+EOF
 
 ################################
 #      install tweaks
