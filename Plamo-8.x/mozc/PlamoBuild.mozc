@@ -353,17 +353,27 @@ if [ $opt_package -eq 1 ] ; then
   install -Dm755 bazel-bin/gui/tool/mozc_tool "$P"/usr/lib/mozc/mozc_tool
 
   # gen_zipcode-dic_
-  install -Dm755 $W/generate-zipcode-dic.sh $P/usr/lib/mozc/generate-zipcode-dic.sh
-  install -Dm644 $W/jigyosyo-convert-mozc-dictionary.awk $P/usr/lib/mozc/jigyosyo-convert-mozc-dictionary.awk
-  install -Dm644 $W/ken_all-convert-mozc-dictionary.awk $P/usr/lib/mozc/ken_all-convert-mozc-dictionary.awk
+  install -Dm755 $W/generate-zipcode-dic.sh $P/usr/lib/mozc/tools/generate-zipcode-dic.sh
+  install -Dm644 $W/jigyosyo-convert-mozc-dictionary.awk $P/usr/lib/mozc/tools/jigyosyo-convert-mozc-dictionary.awk
+  install -Dm644 $W/ken_all-convert-mozc-dictionary.awk $P/usr/lib/mozc/tools/ken_all-convert-mozc-dictionary.awk
+
+  if [ ! -d $P/usr/bin ];then
+	mkdir $P/usr/bin
+  fi
+  cd $P/usr/bin
+  ln -s ../lib/mozc/tools/generate-zipcode-dic.sh generate-zipcode-dic
+  cd $B/src
 
   install -Dm644 $W/LICENSE.japanese-zip-code-dictionary $docdir/mozc/japanese-zip-code-dictionary
   install -Dm644 $W/LICENSE.japanese-zip-code-dictionary $P/usr/lib/mozc/LICENSE
 
   install -Dm644 $W/README.v2.0.generate-zipcode-dic $docdir/mozc/README.v2.0.generate-zipcode-dic
 
-  # BUILD.bazel
-  install -Dm644 $W/BUILD.bazel $docdir/mozc/BUILD.bazel
+  # addfiles のインストール
+  for add in $addfiles ; do
+    cp $W/$add $docdir/mozc/$add
+    gzip $docdir/mozc/$add
+  done
 
 ################################
 #      install tweaks
