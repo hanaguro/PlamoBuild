@@ -362,8 +362,11 @@ if [ $opt_package -eq 1 ] ; then
 
   install -Dm644 $W/README.v2.0.generate-zipcode-dic $docdir/mozc/README.v2.0.generate-zipcode-dic
 
-  # BUILD.bazel
-  install -Dm644 $W/BUILD.bazel $docdir/mozc/BUILD.bazel
+  # addfiles のインストール
+  for add in $addfiles ; do
+    cp $W/$add $docdir/mozc/$add
+    gzip $docdir/mozc/$add
+  done
 
 ################################
 #      install tweaks
