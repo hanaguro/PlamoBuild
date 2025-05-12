@@ -44,7 +44,7 @@ if [ $opt_download -eq 1 ] ; then
     wget_output=$(wget -N --content-disposition "$url" 2>&1)
     wget_exit_code=$?
     detected_filename=""
-    filename_saved=$(echo "$wget_output" | grep -oP "(?<=')code_.*\.deb(?=')")
+    filename_saved=$(echo "$wget_output" | grep -m 1 -oP "(?<=')code_.*\.deb(?=')")
 
     if [[ -n "$filename_saved" ]]; then
        detected_filename="$filename_saved"
@@ -54,14 +54,11 @@ if [ $opt_download -eq 1 ] ; then
        detected_filename="$filename_skipped"
     fi
 
- if [ ! -d $S ];then
-    rm -rf $S
-    mkdir -p $S
- fi
-
     if [[ -n "$detected_filename" ]]; then
+       rm -rf $S
+       mkdir -p $S
        cd $S
-       ar xv $W/$detected_filename
+       ar xv ${W}/${detected_filename}
     else
        echo "Could not reliably determine the filename from wget output."
        exit 1
@@ -117,7 +114,7 @@ if [ $opt_package -eq 1 ] ; then
 #  export LDFLAGS='-Wl,--as-needed'
 #  make install DESTDIR=$P
   cd $P
-  vers=$(ls $W/*.deb|awk -F'_' '{ gsub(/-/, "_", $2);print $2 }')
+  vers=$(ls -rt $W/code_*.deb|awk -F'_' '{ gsub(/-/, "_", $2);print $2 }'|tail -n1)
   tar xvf $S/data.tar.xz
 
 ################################
