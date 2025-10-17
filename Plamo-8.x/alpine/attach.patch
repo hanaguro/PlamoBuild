@@ -1,0 +1,21 @@
+diff -uprN alpine-2.26/pico/composer.c alpine-2.26.new/pico/composer.c
+--- alpine-2.26/pico/composer.c	2022-06-03 09:14:00.487274758 +0900
++++ alpine-2.26.new/pico/composer.c	2023-04-01 06:45:04.633536043 +0900
+@@ -135,7 +135,7 @@ static KEYMENU menu_header[] = {
+     /* TRANSLATORS: Del Char is Delete Character */
+     {"^C", N_("Cancel"), KS_CANCEL},	{"^D", N_("Del Char"), KS_NONE},
+     /* TRANSLATORS: Next Page */
+-    {"^J", N_("Attach"), KS_ATTACH},	{"^V", N_("NxtPg/End"), KS_NEXTPAGE},
++    {"^E", N_("Attach"), KS_ATTACH},	{"^V", N_("NxtPg/End"), KS_NEXTPAGE},
+     /* TRANSLATORS: Undelete a line that was just deleted */
+     {"^U", N_("UnDel Line"), KS_NONE},	{NULL, NULL}
+ };
+@@ -4448,7 +4448,7 @@ ShowPrompt(void)
+ 	menu_header[PONE_KEY].name  = "^O";
+ 	menu_header[PONE_KEY].label = N_("Postpone");
+ 
+-	menu_header[ATT_KEY].name   = "^J";
++	menu_header[ATT_KEY].name   = "^E";
+     }
+ 
+     wkeyhelp(menu_header);
