@@ -1,0 +1,52 @@
+diff -uprN TheRock/rocm-systems/projects/rocprofiler-sdk/external/CMakeLists.txt TheRock.new/rocm-systems/projects/rocprofiler-sdk/external/CMakeLists.txt
+--- TheRock/rocm-systems/projects/rocprofiler-sdk/external/CMakeLists.txt	2025-11-03 15:21:12.040233966 +0900
++++ TheRock.new/rocm-systems/projects/rocprofiler-sdk/external/CMakeLists.txt	2025-11-03 15:17:35.491031109 +0900
+@@ -138,6 +138,21 @@ rocprofiler_checkout_git_submodule(
+     REPO_URL https://github.com/jbeder/yaml-cpp.git
+     REPO_BRANCH "master")
+ 
++set(YAMLCPP_FILE
++    "${PROJECT_SOURCE_DIR}/external/yaml-cpp/src/emitterutils.cpp")
++
++if(EXISTS "${YAMLCPP_FILE}")
++    message(STATUS "Adding #include <cstdint> to ${YAMLCPP_FILE}")
++
++    file(READ "${YAMLCPP_FILE}" FILE_CONTENT)
++    set(NEW_INCLUDE "#include <cstdint>\n\n")
++    file(WRITE "${YAMLCPP_FILE}"
++        "${NEW_INCLUDE}${FILE_CONTENT}")
++    message(STATUS "Finished modifying ${YAMLCPP_FILE}")
++else()
++    message(FATAL_ERROR "yaml-cpp source file not found: ${YAMLCPP_FILE}")
++endif()
++
+ add_subdirectory(yaml-cpp EXCLUDE_FROM_ALL)
+ 
+ target_link_libraries(rocprofiler-sdk-yaml-cpp
+@@ -203,6 +218,26 @@ rocprofiler_checkout_git_submodule(
+     REPO_URL https://github.com/serge1/ELFIO.git
+     REPO_BRANCH "Release_3.12")
+ 
++set(ELFIO_FILE  
++    "${PROJECT_SOURCE_DIR}/external/elfio/elfio/elf_types.hpp")
++if(EXISTS "${ELFIO_FILE}")
++    message(STATUS "Adding #include <cstdint> to ${ELFIO_FILE}")
++    file(READ "${ELFIO_FILE}" FILE_CONTENT)
++    set(SEARCH_MARKER "#define ELFTYPES_H")
++    set(NEW_INCLUDE "#include <cstdint>")
++    string(REPLACE
++        "${SEARCH_MARKER}"
++        "${SEARCH_MARKER}\n\n${NEW_INCLUDE}"
++        FILE_CONTENT              # ← 出力変数（結果を格納）
++        "${FILE_CONTENT}")        # ← 入力（元のコンテンツ）
++    file(WRITE "${ELFIO_FILE}"
++        "${FILE_CONTENT}")
++
++    message(STATUS "Finished modifying ${ELFIO_FILE}")
++else()
++    message(FATAL_ERROR "ELFIO source file not found: ${ELFIO_FILE}")
++endif()
++
+ set(ELFIO_BUILD_EXAMPLES OFF)
+ set(ELFIO_BUILD_TESTS OFF)
+ add_subdirectory(elfio EXCLUDE_FROM_ALL)
