@@ -1,0 +1,11 @@
+diff -uprN libfprint.orig/libfprint/drivers/fpcmoc/fpc.c libfprint/libfprint/drivers/fpcmoc/fpc.c
+--- libfprint.orig/libfprint/drivers/fpcmoc/fpc.c	2025-12-16 19:41:11.220974764 +0900
++++ libfprint/libfprint/drivers/fpcmoc/fpc.c	2025-12-16 19:45:00.665087587 +0900
+@@ -66,6 +66,7 @@ static const FpIdEntry id_table[] = {
+   { .vid = 0x10A5,  .pid = 0xFFE0,  },
+   { .vid = 0x10A5,  .pid = 0xA305,  },
+   { .vid = 0x10A5,  .pid = 0xA306,  },
++  { .vid = 0x10A5,  .pid = 0xAB05,  },
+   { .vid = 0x10A5,  .pid = 0xDA04,  },
+   { .vid = 0x10A5,  .pid = 0xD805,  },
+   { .vid = 0x10A5,  .pid = 0xD205,  },
